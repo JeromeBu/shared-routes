@@ -1,5 +1,5 @@
-import type { HttpMethod, UnknownSharedRoute, Url } from "../core";
-import { configureCreateHttpClient, HandlerCreator } from "../core";
+import type { HttpMethod, UnknownSharedRoute, Url } from "..";
+import { configureCreateHttpClient, HandlerCreator } from "..";
 
 import type { SuperTest, Test } from "supertest";
 

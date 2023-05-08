@@ -1,6 +1,6 @@
 import type { AxiosInstance } from "axios";
-import type { UnknownSharedRoute, Url } from "../core";
-import { configureCreateHttpClient, HandlerCreator } from "../core";
+import type { UnknownSharedRoute, Url } from "..";
+import { configureCreateHttpClient, HandlerCreator } from "..";
 
 export const createAxiosHandlerCreator =
   <SharedRoutes extends Record<string, UnknownSharedRoute>>(
