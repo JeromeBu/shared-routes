@@ -9,6 +9,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit && tsc --noEmit -p test",
     "build": "yarn build:cjs && yarn build:esm && yarn build:deno",
+    "watch": "tsc -w & tsc -p tsconfig.esm.json -w",
     "build:cjs": "tsc",
     "build:esm": "rm -rf dist/esm && tsc -p tsconfig.esm.json && js2mjs dist/esm",
     "build:deno": "denoify",
@@ -18,7 +19,8 @@
     "_format": "prettier '**/*.{ts,tsx,json,md}'",
     "format": "npm run _format -- --write",
     "format:check": "npm run _format -- --list-different",
-    "link-in-app": "ts-node --skipProject scripts/link-in-app.ts"
+    "link-in-app": "ts-node --skipProject scripts/link-in-app.ts",
+    "link-in-demo": "yarn link-in-app shared-routes-demo"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
