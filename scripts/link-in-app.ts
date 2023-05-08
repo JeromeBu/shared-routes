@@ -3,8 +3,13 @@ import { join as pathJoin, relative as pathRelative } from "path";
 import * as fs from "fs";
 
 const singletonDependencies: string[] = [
-  //"react",
-  //"@types/react"
+  "@types/express",
+  "@types/supertest",
+  "axios",
+  "express",
+  "supertest",
+  "zod-to-json-schema",
+  "zod",
 ];
 
 const rootDirPath = pathJoin(__dirname, "..");
