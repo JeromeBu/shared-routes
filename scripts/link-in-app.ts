@@ -29,22 +29,17 @@ fs.writeFileSync(
           "main": packageJsonParsed["main"]?.replace(/^dist\//, ""),
           "types": packageJsonParsed["types"]?.replace(/^dist\//, ""),
           "module": packageJsonParsed["module"]?.replace(/^dist\//, ""),
-          "bin": !("bin" in packageJsonParsed)
-            ? undefined
-            : Object.fromEntries(
-                Object.entries(packageJsonParsed["bin"]).map(([key, value]) => [
-                  key,
-                  (value as string).replace(/^dist\//, ""),
+          "exports": Object.fromEntries(
+            Object.entries(packageJsonParsed["exports"]).map(([path, obj]) => [
+              path,
+              Object.fromEntries(
+                Object.entries(obj as Record<string, string>).map(([type, path]) => [
+                  type,
+                  path.replace(/^\.\/dist\//, "./"),
                 ]),
               ),
-          "exports": !("exports" in packageJsonParsed)
-            ? undefined
-            : Object.fromEntries(
-                Object.entries(packageJsonParsed["exports"]).map(([key, value]) => [
-                  key,
-                  (value as string).replace(/^\.\/dist\//, "./"),
-                ]),
-              ),
+            ]),
+          ),
         };
       })(),
       null,
