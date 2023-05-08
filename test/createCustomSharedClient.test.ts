@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { describe, it, expect } from "vitest";
-import { defineRoute, defineRoutes, createCustomSharedClient } from "../src/core";
+import { defineRoute, defineRoutes, createCustomSharedClient } from "../src";
 
 type Book = { title: string; author: string };
 const bookSchema: z.Schema<Book> = z.object({

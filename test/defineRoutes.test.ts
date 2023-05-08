@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { describe, it, expect } from "vitest";
-import { defineRoutes, defineRoute, listRoutes } from "../src/core";
+import { defineRoutes, defineRoute, listRoutes } from "../src";
 
 describe("Shared routes definitions", () => {
   describe("defineRoutes", () => {
