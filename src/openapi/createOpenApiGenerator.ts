@@ -2,7 +2,7 @@ import { OpenAPIV3 as OpenAPI } from "openapi-types";
 import { keys, UnknownSharedRoute } from "..";
 import { z } from "zod";
 import type { ZodFirstPartyTypeKind, ZodRawShape } from "zod";
-import zodToJsonSchema from "zod-to-json-schema";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 type TypedTag<T extends string> = {
   name: T;
