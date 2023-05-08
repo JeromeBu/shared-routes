@@ -1,13 +1,13 @@
 {
   "name": "shared-routes",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "The shared-routes library",
   "repository": {
     "type": "git",
     "url": "git@github.com:JeromeBu/shared-routes.git"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p test",
     "build": "yarn build:cjs && yarn build:esm && yarn build:deno",
     "build:cjs": "tsc",
     "build:esm": "rm -rf dist/esm && tsc -p tsconfig.esm.json && js2mjs dist/esm",
