@@ -1,5 +1,5 @@
 import { OpenAPIV3 as OpenAPI } from "openapi-types";
-import { keys, UnknownSharedRoute } from "../core";
+import { keys, UnknownSharedRoute } from "..";
 import { z } from "zod";
 import type { ZodFirstPartyTypeKind, ZodRawShape } from "zod";
 import zodToJsonSchema from "zod-to-json-schema";

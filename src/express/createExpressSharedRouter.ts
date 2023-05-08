@@ -1,6 +1,6 @@
 import type { IRoute, RequestHandler, Router } from "express";
-import type { PathParameters, UnknownSharedRoute } from "../core";
-import { keys } from "../core";
+import type { PathParameters, UnknownSharedRoute } from "..";
+import { keys } from "..";
 import { z, ZodError } from "zod";
 
 type ExpressSharedRouterOptions = {

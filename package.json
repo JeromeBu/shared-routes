@@ -68,19 +68,35 @@
     "zod": "^3.21.4",
     "zod-to-json-schema": "^3.21.0"
   },
-  "main": "dist/core/index.js",
-  "types": "dist/core/index.d.ts",
-  "module": "dist/esm/core/index.mjs",
+  "dependencies": {},
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/esm/index.mjs",
   "exports": {
     ".": {
-      "require": "./dist/core/index.js",
-      "import": "./dist/esm/core/index.mjs",
-      "types": "./dist/core/index.d.ts"
+      "require": "./dist/index.js",
+      "import": "./dist/esm/index.mjs",
+      "types": "./dist/index.d.ts"
     },
-    "./*": {
-      "require": "./dist/*.js",
-      "import": "./dist/esm/*.mjs",
-      "types": "./dist/*.d.ts"
+    "./axios": {
+      "require": "./dist/axios/index.js",
+      "import": "./dist/esm/axios/index.mjs",
+      "types": "./dist/axios/index.d.ts"
+    },
+    "./express": {
+      "require": "./dist/express/index.js",
+      "import": "./dist/esm/express/index.mjs",
+      "types": "./dist/express/index.d.ts"
+    },
+    "./supertest": {
+      "require": "./dist/supertest/index.js",
+      "import": "./dist/esm/supertest/index.mjs",
+      "types": "./dist/supertest/index.d.ts"
+    },
+    "./openapi": {
+      "require": "./dist/openapi/index.js",
+      "import": "./dist/esm/openapi/index.mjs",
+      "types": "./dist/openapi/index.d.ts"
     }
   }
 }
