@@ -9,6 +9,7 @@ export const createAxiosHandlerCreator =
   (routeName, routes, replaceParamsInUrl) =>
   async ({ body, urlParams, queryParams, headers } = {}) => {
     const route = routes[routeName];
+
     const { data, ...rest } = await axios.request({
       method: route.method,
       url: replaceParamsInUrl(route.url, urlParams as Url),
@@ -19,6 +20,7 @@ export const createAxiosHandlerCreator =
         ...(headers ?? ({} as any)),
       },
     });
+
     return { ...rest, body: data };
   };
 
