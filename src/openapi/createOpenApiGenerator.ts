@@ -21,7 +21,7 @@ type CreateOpenApiGenerator = <
     {
       [R in keyof SharedRoutes]: Omit<OpenAPI.PathItemObject, OpenAPI.HttpMethods> & {
         tags?: TagName[];
-        extraDocumentation?: {
+        extraDocs?: {
           body?: OpenAPI.BaseSchemaObject & {
             properties?: Partial<
               Record<
@@ -51,6 +51,9 @@ type CreateOpenApiGenerator = <
               >
             >;
           };
+
+          successStatusCode?: number;
+          responses?: OpenAPI.ResponsesObject;
         };
       };
     }
@@ -62,8 +65,7 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
     ...openApiRootDoc,
     paths: keys(sharedRoutes).reduce((acc, routeName) => {
       const route = sharedRoutes[routeName];
-      const { extraDocumentation, ...extraDataForRoute } =
-        extraDataByRoute[routeName] ?? {};
+      const { extraDocs, ...extraDataForRoute } = extraDataByRoute[routeName] ?? {};
       const responseSchema = zodToOpenApi(route.responseBodySchema);
       const responseSchemaType:
         | OpenAPI.NonArraySchemaObjectType
@@ -78,15 +80,11 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
           ? zodObjectToParameters(
               route.queryParamsSchema,
               "query",
-              extraDocumentation?.queryParams,
+              extraDocs?.queryParams,
             )
           : []),
         ...(!isShapeObjectEmpty(route.headersSchema)
-          ? zodObjectToParameters(
-              route.headersSchema,
-              "header",
-              extraDocumentation?.headerParams,
-            )
+          ? zodObjectToParameters(route.headersSchema, "header", extraDocs?.headerParams)
           : []),
       ];
 
@@ -106,7 +104,7 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
                 content: {
                   "application/json": {
                     schema: {
-                      ...extraDocumentation?.body,
+                      ...extraDocs?.body,
                       ...zodToOpenApi(route.bodySchema),
                     },
                   },
@@ -115,7 +113,7 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
             }),
 
             responses: {
-              "200": {
+              [extraDocs?.successStatusCode ?? 200]: {
                 description:
                   responseSchemaType !== undefined
                     ? "Success"
@@ -127,7 +125,9 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
                     },
                   },
                 }),
+                ...extraDocs?.responseBody,
               },
+              ...extraDocs?.responses,
             },
           },
         },
