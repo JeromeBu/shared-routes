@@ -12,7 +12,7 @@ const makeValidationMiddleware =
   (req, res, next) => {
     try {
       if (!options.skipRequestValidation) {
-        req.body = route.bodySchema.parse(req.body) as any;
+        req.body = route.requestBodySchema.parse(req.body) as any;
         req.query = route.queryParamsSchema.parse(req.query) as any;
         route.headersSchema.parse(req.headers); // we don't want to re-affect req.headers parsed value because we don't want to lose all other headers
       }
@@ -43,7 +43,7 @@ export const createExpressSharedRouter = <
       ...handlers: RequestHandler<
         PathParameters<SharedRoutes[Route]["url"]>,
         z.infer<SharedRoutes[Route]["responseBodySchema"]>,
-        z.infer<SharedRoutes[Route]["bodySchema"]>,
+        z.infer<SharedRoutes[Route]["requestBodySchema"]>,
         z.infer<SharedRoutes[Route]["queryParamsSchema"]>,
         any
       >[]

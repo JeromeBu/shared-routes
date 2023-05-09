@@ -10,7 +10,7 @@ describe("Shared routes definitions", () => {
           addBook: defineRoute({
             method: "post",
             url: "/books",
-            bodySchema: z.object({ title: z.string() }),
+            requestBodySchema: z.object({ title: z.string() }),
           }),
           getAllBooks: defineRoute({
             method: "post",
@@ -31,7 +31,7 @@ describe("Shared routes definitions", () => {
         addBook: defineRoute({
           method: "post",
           url: "/books",
-          bodySchema: z.object({ title: z.string() }),
+          requestBodySchema: z.object({ title: z.string() }),
         }),
         getAllBooks: defineRoute({
           method: "get",
@@ -41,7 +41,7 @@ describe("Shared routes definitions", () => {
         }),
       });
 
-      expect(() => routes.getAllBooks.bodySchema.parse({ yo: "lala" })).toThrow();
+      expect(() => routes.getAllBooks.requestBodySchema.parse({ yo: "lala" })).toThrow();
       expect(listRoutes(routes)).toEqual(["POST /books", "GET /books"]);
     });
   });
