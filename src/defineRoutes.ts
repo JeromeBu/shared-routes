@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { Url } from "./pathParameters";
 
-type OptionalFields<Body, Query, ResponseBody, Headers> = {
-  bodySchema?: z.Schema<Body>;
+type OptionalFields<RequestBody, Query, ResponseBody, Headers> = {
+  requestBodySchema?: z.Schema<RequestBody>;
   queryParamsSchema?: z.Schema<Query>;
   responseBodySchema?: z.Schema<ResponseBody>;
   headersSchema?: z.Schema<Headers>;
@@ -16,19 +16,19 @@ type MethodAndUrl<U extends Url> = {
 
 type SharedRouteWithOptional<
   U extends Url,
-  Body,
+  RequestBody,
   Query,
   ResponseBody,
   Headers,
-> = MethodAndUrl<U> & OptionalFields<Body, Query, ResponseBody, Headers>;
+> = MethodAndUrl<U> & OptionalFields<RequestBody, Query, ResponseBody, Headers>;
 
 export type SharedRoute<
   U extends Url,
-  Body,
+  RequestBody,
   Query,
   ResponseBody,
   Headers,
-> = MethodAndUrl<U> & Required<OptionalFields<Body, Query, ResponseBody, Headers>>;
+> = MethodAndUrl<U> & Required<OptionalFields<RequestBody, Query, ResponseBody, Headers>>;
 
 export type UnknownSharedRoute = SharedRoute<Url, unknown, unknown, unknown, unknown>;
 export type UnknownSharedRouteWithUrl<U extends Url> = SharedRoute<
@@ -41,14 +41,14 @@ export type UnknownSharedRouteWithUrl<U extends Url> = SharedRoute<
 
 export const defineRoute = <
   U extends Url,
-  Body = void,
+  RequestBody = void,
   Query = void,
   ResponseBody = void,
   Headers = void,
 >(
-  route: SharedRouteWithOptional<U, Body, Query, ResponseBody, Headers>,
-): SharedRoute<U, Body, Query, ResponseBody, Headers> => ({
-  bodySchema: z.object({}).strict() as any,
+  route: SharedRouteWithOptional<U, RequestBody, Query, ResponseBody, Headers>,
+): SharedRoute<U, RequestBody, Query, ResponseBody, Headers> => ({
+  requestBodySchema: z.object({}).strict() as any,
   queryParamsSchema: z.object({}).strict() as any,
   responseBodySchema: z.void() as any,
   headersSchema: z.object({}) as any,
