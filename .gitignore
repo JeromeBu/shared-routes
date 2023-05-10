@@ -43,3 +43,4 @@ jspm_packages
 /.yarn_home
 /dist
 /deno_dist
+.idea
