@@ -72,20 +72,33 @@ describe("createAxiosSharedCaller", () => {
       getByTodoById: defineRoute({
         method: "get",
         url: "https://jsonplaceholder.typicode.com/todos/:todoId",
+        queryParamsSchema: z.object({ userId: z.number(), max: z.number().optional() }),
         responseBodySchema: todoSchema,
+      }),
+      addPost: defineRoute({
+        method: "post",
+        url: "https://jsonplaceholder.typicode.com/posts",
+        requestBodySchema: z.object({
+          title: z.string(),
+          body: z.string(),
+          userId: z.number(),
+        }),
+        responseBodySchema: z.object({ id: z.number() }),
       }),
     });
 
     it.each([
-      // { name: "axios", httpClient: createAxiosSharedClient(routes, axios) },
+      { name: "axios", httpClient: createAxiosSharedClient(routes, axios) },
       { name: "fetch", httpClient: createFetchSharedClient(routes, fetch) },
     ])("actually calls a placeholder endpoint, using $name", async ({ httpClient }) => {
       expect(listRoutes(routes)).toEqual([
         "GET https://jsonplaceholder.typicode.com/todos/:todoid",
+        "POST https://jsonplaceholder.typicode.com/posts",
       ]);
 
       const response = await httpClient.getByTodoById({
         urlParams: { todoId: "3" },
+        queryParams: { userId: 1, max: undefined },
       });
       const expectedResponseBody: z.infer<typeof todoSchema> = {
         id: 3,
@@ -95,6 +108,12 @@ describe("createAxiosSharedCaller", () => {
       };
       expect(response.body).toEqual(expectedResponseBody);
       expect(response.status).toBe(200);
+
+      const addPostResponse = await httpClient.addPost({
+        body: { title: "My great post", body: "Some content", userId: 1 },
+      });
+      expect(addPostResponse.body.id).toBeTypeOf("number");
+      expect(addPostResponse.status).toBe(201);
     });
   });
 });
