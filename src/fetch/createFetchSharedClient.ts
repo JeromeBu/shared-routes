@@ -14,7 +14,7 @@ export const createFetchHandlerCreator =
     const route = routes[routeName];
 
     const stringQueryParams =
-      queryParams && Object.keys(queryParams).length === 0
+      queryParams && Object.keys(queryParams).length > 0
         ? "?" + queryParamsToString(queryParams as any)
         : "";
 
