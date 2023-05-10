@@ -8,7 +8,7 @@
     "outDir": "./dist",
     "sourceMap": true,
     "newLine": "LF",
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "noUnusedParameters": true,
     "incremental": false,
     "strict": true,
