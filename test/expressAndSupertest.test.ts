@@ -54,7 +54,7 @@ const createBookRouter = (): ExpressRouter => {
 
   const { expressSharedRouter } = createExpressSharedRouter(routes, expressRouter);
 
-  expressSharedRouter.getAllBooks((req, res) => {
+  expressSharedRouter.getAllBooks((_, res) => {
     return res.json(bookDB);
   });
 
@@ -72,7 +72,7 @@ const createBookRouter = (): ExpressRouter => {
     return res.json(book);
   });
 
-  expressSharedRouter.getBookWithoutParams((req, res) => {
+  expressSharedRouter.getBookWithoutParams((_, res) => {
     res.status(200).json();
   });
 

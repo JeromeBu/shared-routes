@@ -1,8 +1,10 @@
 import axios from "axios";
 import { defineRoute, defineRoutes, listRoutes } from "../src";
 import { z } from "zod";
-import { createAxiosSharedClient } from "../src/axios/createAxiosSharedClient";
+import { createAxiosSharedClient } from "../src/axios";
+import { createFetchSharedClient } from "../src/fetch";
 import { describe, it, expect } from "vitest";
+import fetch from "node-fetch";
 
 describe("createAxiosSharedCaller", () => {
   it("create a caller from axios and sharedRoutes object", async () => {
@@ -57,7 +59,7 @@ describe("createAxiosSharedCaller", () => {
     };
   });
 
-  it("actually calls a placeholder endpoint", async () => {
+  describe("Actually calling an endpoint", () => {
     // WARNING : This test uses an actual placeholder api (which might not always be available...)
     const todoSchema = z.object({
       userId: z.number(),
@@ -74,21 +76,25 @@ describe("createAxiosSharedCaller", () => {
       }),
     });
 
-    expect(listRoutes(routes)).toEqual([
-      "GET https://jsonplaceholder.typicode.com/todos/:todoid",
-    ]);
+    it.each([
+      // { name: "axios", httpClient: createAxiosSharedClient(routes, axios) },
+      { name: "fetch", httpClient: createFetchSharedClient(routes, fetch) },
+    ])("actually calls a placeholder endpoint, using $name", async ({ httpClient }) => {
+      expect(listRoutes(routes)).toEqual([
+        "GET https://jsonplaceholder.typicode.com/todos/:todoid",
+      ]);
 
-    const axiosCaller = createAxiosSharedClient(routes, axios);
-    const response = await axiosCaller.getByTodoById({
-      urlParams: { todoId: "3" },
+      const response = await httpClient.getByTodoById({
+        urlParams: { todoId: "3" },
+      });
+      const expectedResponseBody: z.infer<typeof todoSchema> = {
+        id: 3,
+        userId: 1,
+        completed: false,
+        title: "fugiat veniam minus",
+      };
+      expect(response.body).toEqual(expectedResponseBody);
+      expect(response.status).toBe(200);
     });
-    const expectedResponseBody: z.infer<typeof todoSchema> = {
-      id: 3,
-      userId: 1,
-      completed: false,
-      title: "fugiat veniam minus",
-    };
-    expect(response.body).toEqual(expectedResponseBody);
-    expect(response.status).toBe(200);
   });
 });
