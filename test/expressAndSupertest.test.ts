@@ -5,7 +5,7 @@ import { createSupertestSharedClient } from "../src/supertest/createSupertestSha
 import supertest from "supertest";
 import express from "express";
 import bodyParser from "body-parser";
-import e, { Router as ExpressRouter } from "express";
+import { Router as ExpressRouter } from "express";
 import { expect, it, describe } from "vitest";
 
 const zNumberFromString = z.preprocess((v: any) => {
@@ -55,7 +55,6 @@ const createBookRouter = (): ExpressRouter => {
   const { expressSharedRouter } = createExpressSharedRouter(routes, expressRouter);
 
   expressSharedRouter.getAllBooks((req, res) => {
-    console.log("Getting all books : ", req.query);
     return res.json(bookDB);
   });
 
@@ -64,15 +63,11 @@ const createBookRouter = (): ExpressRouter => {
       res.status(401);
       return res.json();
     }
-
-    console.log("Adding book : ", req.body);
-
     bookDB.push(req.body);
     return res.json();
   });
 
   expressSharedRouter.getBookByTitle((req, res) => {
-    console.log("Getting books by title : ", req.params);
     const book = bookDB.find((b) => b.title === req.params.title);
     return res.json(book);
   });
@@ -109,8 +104,6 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
       "GET /no-params",
     ]);
 
-    console.log("STATUS : ", addBookResponse.status);
-    console.log("BODY of addBookResponse : ", addBookResponse.body);
     expect(addBookResponse.body).toEqual(""); // type is void, but express sends "";
     expect(addBookResponse.status).toBe(401);
   });
