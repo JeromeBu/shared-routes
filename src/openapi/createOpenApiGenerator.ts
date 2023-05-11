@@ -4,135 +4,147 @@ import { z } from "zod";
 import type { ZodFirstPartyTypeKind, ZodRawShape } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
-type TypedTag<T extends string> = {
-  name: T;
-};
-
 type CreateOpenApiGenerator = <
-  SharedRoutes extends Record<string, UnknownSharedRoute>,
-  TagName extends string,
+  SharedRoutesByTag extends { [T: string]: Record<string, UnknownSharedRoute> },
 >(
-  sharedRoutes: SharedRoutes,
-  openApiRootDoc: Omit<OpenAPI.Document, "paths"> & {
-    tags?: TypedTag<TagName>[];
-  },
+  sharedRoutesByTag: SharedRoutesByTag,
+  openApiRootDoc: Omit<OpenAPI.Document, "paths">,
 ) => (
   extraDataByRoute: Partial<
     {
-      [R in keyof SharedRoutes]: Omit<OpenAPI.PathItemObject, OpenAPI.HttpMethods> & {
-        tags?: TagName[];
-        extraDocs?: {
-          body?: OpenAPI.BaseSchemaObject & {
-            properties?: Partial<
-              Record<
-                keyof z.infer<SharedRoutes[R]["requestBodySchema"]>,
-                OpenAPI.BaseSchemaObject
-              >
-            >;
-          };
-          queryParams?: Partial<
-            Record<
-              keyof z.infer<SharedRoutes[R]["queryParamsSchema"]>,
-              Partial<OpenAPI.ParameterObject>
-            >
-          >;
-          headerParams?: Partial<
-            Record<
-              keyof z.infer<SharedRoutes[R]["headersSchema"]>,
-              Partial<OpenAPI.ParameterObject>
-            >
-          >;
+      [Tag in keyof SharedRoutesByTag]: Partial<
+        {
+          [R in keyof SharedRoutesByTag[Tag]]: Omit<
+            OpenAPI.PathItemObject,
+            OpenAPI.HttpMethods
+          > & {
+            extraDocs?: {
+              body?: OpenAPI.BaseSchemaObject & {
+                properties?: Partial<
+                  Record<
+                    keyof z.infer<SharedRoutesByTag[Tag][R]["requestBodySchema"]>,
+                    OpenAPI.BaseSchemaObject
+                  >
+                >;
+              };
+              queryParams?: Partial<
+                Record<
+                  keyof z.infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]>,
+                  Partial<OpenAPI.ParameterObject>
+                >
+              >;
+              headerParams?: Partial<
+                Record<
+                  keyof z.infer<SharedRoutesByTag[Tag][R]["headersSchema"]>,
+                  Partial<OpenAPI.ParameterObject>
+                >
+              >;
 
-          responseBody?: OpenAPI.BaseSchemaObject & {
-            properties?: Partial<
-              Record<
-                keyof z.infer<SharedRoutes[R]["queryParamsSchema"]>,
-                OpenAPI.BaseSchemaObject
-              >
-            >;
-          };
+              responseBody?: OpenAPI.BaseSchemaObject & {
+                properties?: Partial<
+                  Record<
+                    keyof z.infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]>,
+                    OpenAPI.BaseSchemaObject
+                  >
+                >;
+              };
 
-          successStatusCode?: number;
-          responses?: OpenAPI.ResponsesObject;
-        };
-      };
+              successStatusCode?: number;
+              responses?: OpenAPI.ResponsesObject;
+            };
+          };
+        }
+      >;
     }
   >,
 ) => OpenAPI.Document;
 
 export const createOpenApiGenerator: CreateOpenApiGenerator =
-  (sharedRoutes, openApiRootDoc) => (extraDataByRoute) => ({
+  (sharedRoutesByTag, openApiRootDoc) => (extraDataByRoute) => ({
     ...openApiRootDoc,
-    paths: keys(sharedRoutes).reduce((acc, routeName) => {
-      const route = sharedRoutes[routeName];
-      const { extraDocs, ...extraDataForRoute } = extraDataByRoute[routeName] ?? {};
-      const responseSchema = zodToOpenApi(route.responseBodySchema);
-      const responseSchemaType:
-        | OpenAPI.NonArraySchemaObjectType
-        | OpenAPI.ArraySchemaObjectType
-        | undefined = (responseSchema as any).type;
-
-      const { formattedUrl, pathParams } = extractFromUrl(route.url);
-
-      const parameters = [
-        ...(pathParams.length > 0 ? pathParams : []),
-        ...(!isShapeObjectEmpty(route.queryParamsSchema)
-          ? zodObjectToParameters(
-              route.queryParamsSchema,
-              "query",
-              extraDocs?.queryParams,
-            )
-          : []),
-        ...(!isShapeObjectEmpty(route.headersSchema)
-          ? zodObjectToParameters(route.headersSchema, "header", extraDocs?.headerParams)
-          : []),
-      ];
+    paths: keys(sharedRoutesByTag).reduce((rootAcc, tag) => {
+      const sharedRoutes = sharedRoutesByTag[tag];
 
       return {
-        ...acc,
-        [formattedUrl]: {
-          ...acc[formattedUrl],
-          [route.method]: {
-            ...extraDataForRoute,
-            ...(parameters.length > 0 && {
-              parameters,
-            }),
+        ...rootAcc,
+        ...keys(sharedRoutes).reduce((acc, routeName) => {
+          const route = sharedRoutes[routeName];
+          const { extraDocs, ...extraDataForRoute } =
+            extraDataByRoute[tag]?.[routeName] ?? {};
+          const responseSchema = zodToOpenApi(route.responseBodySchema);
+          const responseSchemaType:
+            | OpenAPI.NonArraySchemaObjectType
+            | OpenAPI.ArraySchemaObjectType
+            | undefined = (responseSchema as any).type;
 
-            ...(!isShapeObjectEmpty(route.requestBodySchema) && {
-              requestBody: {
-                required: true,
-                content: {
-                  "application/json": {
-                    schema: {
-                      ...extraDocs?.body,
-                      ...zodToOpenApi(route.requestBodySchema),
-                    },
-                  },
-                },
-              },
-            }),
+          const { formattedUrl, pathParams } = extractFromUrl(route.url);
 
-            responses: {
-              [extraDocs?.successStatusCode ?? 200]: {
-                description:
-                  responseSchemaType !== undefined
-                    ? "Success"
-                    : "Success, with void response",
-                ...(responseSchemaType !== undefined && {
-                  content: {
-                    "application/json": {
-                      schema: responseSchema,
+          const parameters = [
+            ...(pathParams.length > 0 ? pathParams : []),
+            ...(!isShapeObjectEmpty(route.queryParamsSchema)
+              ? zodObjectToParameters(
+                  route.queryParamsSchema,
+                  "query",
+                  extraDocs?.queryParams,
+                )
+              : []),
+            ...(!isShapeObjectEmpty(route.headersSchema)
+              ? zodObjectToParameters(
+                  route.headersSchema,
+                  "header",
+                  extraDocs?.headerParams,
+                )
+              : []),
+          ];
+
+          return {
+            ...acc,
+            [formattedUrl]: {
+              ...acc[formattedUrl],
+              [route.method]: {
+                ...extraDataForRoute,
+                tags: [tag],
+                ...(parameters.length > 0 && {
+                  parameters,
+                }),
+
+                ...(!isShapeObjectEmpty(route.requestBodySchema) && {
+                  requestBody: {
+                    required: true,
+                    content: {
+                      "application/json": {
+                        schema: {
+                          ...extraDocs?.body,
+                          ...zodToOpenApi(route.requestBodySchema),
+                        },
+                      },
                     },
                   },
                 }),
-                ...extraDocs?.responseBody,
+
+                responses: {
+                  [extraDocs?.successStatusCode ?? 200]: {
+                    description:
+                      responseSchemaType !== undefined
+                        ? "Success"
+                        : "Success, with void response",
+                    ...(responseSchemaType !== undefined && {
+                      content: {
+                        "application/json": {
+                          schema: responseSchema,
+                        },
+                      },
+                    }),
+                    ...extraDocs?.responseBody,
+                  },
+                  ...extraDocs?.responses,
+                },
               },
-              ...extraDocs?.responses,
             },
-          },
-        },
+          };
+        }, {} as any),
       };
-    }, {} as any),
+    }, {}),
   });
 
 type ParamKind = "path" | "query" | "header";
