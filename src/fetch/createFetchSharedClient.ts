@@ -1,13 +1,15 @@
-import type { RequestInfo, RequestInit, Response } from "node-fetch";
 import type { HttpResponse, UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
 import { queryParamsToString } from "./queryParamsToString";
 
 type Fetch = (url: URL | RequestInfo, init?: RequestInit) => Promise<Response>;
 
+type FetchConfig = { baseURL?: Url };
+
 export const createFetchHandlerCreator =
   <SharedRoutes extends Record<string, UnknownSharedRoute>>(
     fetch: Fetch,
+    { baseURL }: FetchConfig = {},
   ): HandlerCreator<SharedRoutes> =>
   (routeName, routes, replaceParamsInUrl) =>
   async ({ body, urlParams, queryParams, headers } = {}): Promise<HttpResponse<any>> => {
@@ -19,7 +21,9 @@ export const createFetchHandlerCreator =
         : "";
 
     const res = await fetch(
-      replaceParamsInUrl(route.url, urlParams as Url) + stringQueryParams,
+      (baseURL ? baseURL : "") +
+        replaceParamsInUrl(route.url, urlParams as Url) +
+        stringQueryParams,
       {
         method: route.method,
         ...(body ? { body: JSON.stringify(body) } : {}),
@@ -36,4 +40,5 @@ export const createFetchSharedClient = <
 >(
   sharedRouters: SharedRoutes,
   fetch: Fetch,
-) => configureCreateHttpClient(createFetchHandlerCreator(fetch))(sharedRouters);
+  config: FetchConfig = {},
+) => configureCreateHttpClient(createFetchHandlerCreator(fetch, config))(sharedRouters);
