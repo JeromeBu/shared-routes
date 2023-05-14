@@ -1,8 +1,14 @@
 import type { HttpResponse, UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
 import { queryParamsToString } from "./queryParamsToString";
+import type nodeFetch from "node-fetch";
 
-type Fetch = (url: URL | RequestInfo, init?: RequestInit) => Promise<Response>;
+declare function browserFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response>;
+
+type Fetch = typeof browserFetch | typeof nodeFetch;
 
 type FetchConfig = { baseURL?: Url };
 

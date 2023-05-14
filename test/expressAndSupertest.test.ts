@@ -160,3 +160,32 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
 });
 
 const expectToEqual = <T>(actual: T, expected: T) => expect(actual).toEqual(expected);
+
+// type Book = { title: string; author: string };
+// const bookSchema: z.Schema<Book> = z.object({
+//   title: z.string(),
+//   author: z.string(),
+// });
+
+export const _routes = defineRoutes({
+  addBook: defineRoute({
+    method: "post",
+    url: "/books",
+    requestBodySchema: bookSchema,
+  }),
+  getAllBooks: defineRoute({
+    method: "get",
+    url: "/books",
+    queryParamsSchema: z.object({ max: z.number() }),
+    responseBodySchema: z.array(bookSchema),
+  }),
+  getBookByTitle: defineRoute({
+    method: "get",
+    url: "/books/:title",
+    headersSchema: z.object({ authorization: z.string() }),
+    responseBodySchema: z.union([bookSchema, z.undefined()]),
+  }),
+});
+
+// const expressRouter = new
+// const expressSharedRouter = createExpressSharedRouter(_routes, express.Router()).expressSharedRouter;
