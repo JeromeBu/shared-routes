@@ -53,7 +53,7 @@ export const bookRoutes = defineRoutes({
   getBookById: defineRoute({
     method: "get",
     url: "/books/:bookId",
-    responseBodySchema: bookSchema.or(z.void()),
+    responseBodySchema: bookSchema.or(z.undefined()),
   }),
 });
 ```
