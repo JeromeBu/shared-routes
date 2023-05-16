@@ -2,7 +2,10 @@
 
 * [😀 Getting started](README.md)
 * [Defining routes](defining-routes.md)
-* [Fetch (browser or node-fetch)](fetch-browser-or-node-fetch.md)
-* [Axios](axios.md)
-* [Express](express.md)
-* [Supertest](supertest.md)
+
+## Adapters
+
+* [Fetch (browser or node-fetch)](adapters/fetch-browser-or-node-fetch.md)
+* [Axios](adapters/axios.md)
+* [Express](adapters/express.md)
+* [Supertest](adapters/supertest.md)

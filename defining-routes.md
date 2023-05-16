@@ -62,8 +62,8 @@ export const bookRoutes = defineRoutes({
 
 You can now take advantage of the routes definitions with many different adapters:
 
-* [Fetch (browser or node-fetch)](fetch-browser-or-node-fetch.md)
-* [Axios](axios.md)
-* [Express](express.md)
-* [Supertest](supertest.md)
+* [Fetch (browser or node-fetch)](adapters/fetch-browser-or-node-fetch.md)
+* [Axios](adapters/axios.md)
+* [Express](adapters/express.md)
+* [Supertest](adapters/supertest.md)
 * OpenAPI
