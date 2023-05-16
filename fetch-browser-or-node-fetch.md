@@ -1,5 +1,5 @@
 ---
-description: The fetch adapter
+description: The fetch adapter, type safe
 ---
 
 # Fetch (browser or node-fetch)
