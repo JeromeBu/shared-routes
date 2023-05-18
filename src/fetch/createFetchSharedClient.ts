@@ -33,7 +33,7 @@ export const createFetchHandlerCreator =
       {
         method: route.method,
         ...(body ? { body: JSON.stringify(body) } : {}),
-        headers: headers ?? ({} as any),
+        headers: { "Content-Type": "application/json", ...(headers ?? {}) },
       },
     );
     const json = await res.json();
