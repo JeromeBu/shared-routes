@@ -1,4 +1,1 @@
-export {
-  createAxiosSharedClient,
-  createAxiosHandlerCreator,
-} from "./createAxiosSharedClient";
+export { createAxiosSharedClient } from "./createAxiosSharedClient";

@@ -1,4 +1,1 @@
-export {
-  createFetchSharedClient,
-  createFetchHandlerCreator,
-} from "./createFetchSharedClient";
+export { createFetchSharedClient } from "./createFetchSharedClient";

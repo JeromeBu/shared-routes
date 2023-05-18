@@ -53,9 +53,7 @@ export const createExpressSharedRouter = <
   sharedRoutes: SharedRoutes,
   expressRouter: Router,
   options?: ExpressSharedRouterOptions,
-): {
-  expressSharedRouter: ExpressSharedRouter;
-} => {
+): ExpressSharedRouter => {
   const expressSharedRouter = keys(sharedRoutes).reduce((acc, routeName) => {
     const route = sharedRoutes[routeName];
     return {
@@ -64,7 +62,5 @@ export const createExpressSharedRouter = <
     };
   }, {} as ExpressSharedRouter);
 
-  return {
-    expressSharedRouter,
-  };
+  return expressSharedRouter;
 };

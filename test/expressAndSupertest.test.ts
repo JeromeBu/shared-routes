@@ -52,7 +52,7 @@ const createBookRouter = (): ExpressRouter => {
   const bookDB: Book[] = [];
   const expressRouter = ExpressRouter();
 
-  const { expressSharedRouter } = createExpressSharedRouter(routes, expressRouter);
+  const expressSharedRouter = createExpressSharedRouter(routes, expressRouter);
 
   expressSharedRouter.getAllBooks((_, res) => {
     return res.json(bookDB);
