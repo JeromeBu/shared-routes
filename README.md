@@ -30,20 +30,9 @@
 
 <p>The purpose of this library, is to provide a convenient way to share the routes definition. It is particularly convenient inside a monorepo, where you can share the routes as an internal package and than import them where needed</p>
 
-# Install / Import
+Here is how it can help you :
 
-```bash
-# zod is also necessary for schema definition
-
-pnpm install shared-routes
-pnpm install zod
-# or
-npm install shared-routes
-npm install zod
-# or
-yarn add shared-routes
-yarn add zod
-```
+https://github.com/JeromeBu/shared-routes/assets/22095555/0664640e-ce4b-448b-b8d2-4b0761768b84
 
 More :
 
