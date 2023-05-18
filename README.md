@@ -28,3 +28,12 @@ This library brings type safety and validations to those tools.&#x20;
 * Generate an OpenAPI (swagger) documentation
 
 If the route definition change, the contrat will break everywhere it needs to, thanks to the typesafety brought by the library.
+
+
+
+This is well illustrated here:
+
+<figure><img src=".gitbook/assets/show-960.gif" alt=""><figcaption><p>A strong interface contract</p></figcaption></figure>
+
+
+
