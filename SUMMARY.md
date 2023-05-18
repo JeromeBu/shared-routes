@@ -1,6 +1,7 @@
 # Table of contents
 
 * [👋 About this lib](README.md)
+* [Install](install.md)
 * [Defining routes](defining-routes.md)
 
 ## Adapters

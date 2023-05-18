@@ -6,8 +6,8 @@ It will be particularly use full in a monorepo, where the routes definition will
 
 When writing calling routes from a frontend, it is usually quite a pain to make sure that the routes are correct. There are some tools that can help for that for exemple :
 
-* [GraphQL](https://graphql.org) for exemple, but it requires a lot of change in a code base, and there is a need to maintain a schema in the graphql schema.&#x20;
-* [tRPC](https://trpc.io) which is probably the best choice, when using typescript only to share definitions between a backend and a frontend.
+* [GraphQL](https://graphql.org) but it requires a lot of change in a code base, and there is a need to maintain a schema in the graphql query language.&#x20;
+* [tRPC](https://trpc.io) which is probably the best choice, when using typescript, when sharing definitions between a backend and a frontend only.
 
 Shared-routes aims to be a unique definition for REST endpoints. But it relise on usual tools like express, axios, fetchAPI, openApi or supertest.
 
@@ -20,3 +20,4 @@ From the routes definitions you can :&#x20;
 * Call it from a frontend or from another service with the fetch API or axios
 * Générate an OpenAPI (swagger) documentation
 
+If the route definition change, the contrat will break everywhere it needs to, thanks to the typesafety brought by the library.
