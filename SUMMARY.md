@@ -1,6 +1,6 @@
 # Table of contents
 
-* [😀 Getting started](README.md)
+* [👋 About this lib](README.md)
 * [Defining routes](defining-routes.md)
 
 ## Adapters
