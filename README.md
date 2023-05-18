@@ -16,7 +16,7 @@ When writing calling routes from a frontend, it is usually quite a pain to make 
 * [GraphQL](https://graphql.org) but it requires a lot of change in a code base, and there is a need to maintain a schema in the graphql query language.&#x20;
 * [tRPC](https://trpc.io) which is probably the best choice, when using typescript, when sharing definitions between a backend and a frontend only.
 
-Shared-routes aims to be a unique definition for REST endpoints. But it relise on usual tools like express, axios, fetchAPI, openApi or supertest.
+Shared-routes aims to be a unique definition for REST endpoints. But it relies on usual tools like express, axios, fetchAPI, openApi or supertest.
 
 This library brings type safety and validations to those tools.&#x20;
 
@@ -28,12 +28,6 @@ This library brings type safety and validations to those tools.&#x20;
 * Generate an OpenAPI (swagger) documentation
 
 If the route definition change, the contrat will break everywhere it needs to, thanks to the typesafety brought by the library.
-
-
-
-This is well illustrated here:
-
-<figure><img src=".gitbook/assets/show-960.gif" alt=""><figcaption><p>A strong interface contract</p></figcaption></figure>
 
 
 
