@@ -43,7 +43,7 @@
     "!dist/tsconfig.tsbuildinfo"
   ],
   "keywords": [],
-  "homepage": "https://github.com/JeromeBu/shared-routes",
+  "homepage": "https://jeromebu.gitbook.io/shared-routes",
   "peerDependencies": {
     "zod": "^3.0.0"
   },

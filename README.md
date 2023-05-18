@@ -5,7 +5,7 @@
 <p align="center">
     <i>
     One place to define your routes. 
-    <br>Keep front, back, and documentation synchronized and type safe
+    <br>Keep front, back, tests and documentation synchronized and type safe
     </i>
     <br>
     <br>
@@ -22,11 +22,11 @@
       <img src="https://img.shields.io/npm/l/shared-routes">
     </a>
 </p>
-<!-- <p align="center">
-  <a href="https://github.com/JeromeBu/shared-routes">Home</a>
-  -
-  <a href="https://github.com/JeromeBu/shared-routes">Documentation</a>
-</p> -->
+<p align="center">
+  <a href="https://jeromebu.gitbook.io/shared-routes">Documentation</a>
+   - 
+  <a href="https://github.com/JeromeBu/shared-routes-demo">Demo project</a>
+</p>
 
 <p>The purpose of this library, is to provide a convenient way to share the routes definition. It is particularly convenient inside a monorepo, where you can share the routes as an internal package and than import them where needed</p>
 
@@ -35,44 +35,17 @@
 ```bash
 # zod is also necessary for schema definition
 
+pnpm install shared-routes
+pnpm install zod
+# or
 npm install shared-routes
 npm install zod
 # or
 yarn add shared-routes
 yarn add zod
-# or
-pnpm install shared-routes
-pnpm install zod
 ```
 
-## Create your route definitions
+More :
 
-```typescript
-import { defineRoutes, defineRoute } from "shared-routes";
-
-type Book = { title: string; author: string };
-const bookSchema: z.Schema<Book> = z.object({
-  title: z.string(),
-  author: z.string(),
-});
-
-export const routes = defineRoutes({
-  addBook: defineRoute({
-    method: "post",
-    url: "/books",
-    requestBodySchema: bookSchema,
-  }),
-  getAllBooks: defineRoute({
-    method: "get",
-    url: "/books",
-    queryParamsSchema: z.object({ max: z.number() }),
-    responseBodySchema: z.array(bookSchema),
-  }),
-  getBookByTitle: defineRoute({
-    method: "get",
-    url: "/books/:title",
-    headersSchema: z.object({ authorization: z.string() }),
-    responseBodySchema: z.union([bookSchema, z.undefined()]),
-  }),
-});
-```
+- <a href="https://jeromebu.gitbook.io/shared-routes">Documentation</a>
+- <a href="https://github.com/JeromeBu/shared-routes-demo">Demo project</a>
