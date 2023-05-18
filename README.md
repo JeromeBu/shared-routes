@@ -18,6 +18,6 @@ From the routes definitions you can :&#x20;
 * Create your backend with express
 * Test your routes with supertest
 * Call it from a frontend or from another service with the fetch API or axios
-* Générate an OpenAPI (swagger) documentation
+* Generate an OpenAPI (swagger) documentation
 
 If the route definition change, the contrat will break everywhere it needs to, thanks to the typesafety brought by the library.

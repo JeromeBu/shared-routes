@@ -4,6 +4,8 @@ description: This will be the source of truth of your routes
 
 # Defining routes
 
+A full exemple of [a monorepo using pnpm workspaces can be found here](https://github.com/JeromeBu/shared-routes-demo).
+
 ### Example
 
 The whole documentation will be referencing the following route definitions&#x20;
