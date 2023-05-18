@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["es2015", "DOM", "ES2019.Object"],
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "declaration": true,
+    "outDir": "./dist",
+    "sourceMap": true,
+    "newLine": "LF",
+    "noUnusedLocals": false,
+    "noUnusedParameters": true,
+    "incremental": false,
+    "strict": true,
+    "downlevelIteration": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["."]
+}
