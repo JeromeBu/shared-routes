@@ -9,3 +9,4 @@
 * [Axios](adapters/axios.md)
 * [Express](adapters/express.md)
 * [Supertest](adapters/supertest.md)
+* [OpenAPI](adapters/openapi.md)

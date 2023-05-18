@@ -66,4 +66,4 @@ You can now take advantage of the routes definitions with many different adapter
 * [Axios](adapters/axios.md)
 * [Express](adapters/express.md)
 * [Supertest](adapters/supertest.md)
-* OpenAPI
+* [OpenAPI](adapters/openapi.md)
