@@ -1,17 +1,11 @@
-
-import {createRouter, defineRoute} from "type-route";
-import {makeThisModuleAnExecutableRouteLister} from "github-pages-plugin-for-type-route";
-
+import { createRouter, defineRoute } from "type-route";
+// import { makeThisModuleAnExecutableRouteLister } from "github-pages-plugin-for-type-route";
 
 export const routeDefs = {
-	"home": defineRoute("/shared-routes.git"),
-	"pageExample": defineRoute("/page-example"),
+  home: defineRoute("/"),
+  pageExample: defineRoute("/page-example"),
 };
 
-makeThisModuleAnExecutableRouteLister(routeDefs);
+// makeThisModuleAnExecutableRouteLister(routeDefs);
 
-export const {RouteProvider, routes, useRoute} = createRouter(
-	routeDefs
-);
-
-	
+export const { RouteProvider, routes, useRoute } = createRouter(routeDefs);
