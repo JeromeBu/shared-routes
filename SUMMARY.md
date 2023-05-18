@@ -1,6 +1,6 @@
 # Table of contents
 
-* [👋 About this lib](README.md)
+* [👋 The shared-routes library](README.md)
 * [Install](install.md)
 * [Defining routes](defining-routes.md)
 

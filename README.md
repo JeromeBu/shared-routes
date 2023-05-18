@@ -1,6 +1,13 @@
-# 👋 About this lib
+---
+description: >-
+  This library is meant to make building routes between services much more dev
+  friendly and to have a strong interface contract taking advantage of
+  typescript types.
+---
 
-This library is meant to make building routes between services much more dev friendly and to have a strong interface contract taking advantage of typescript types.
+# 👋 The shared-routes library
+
+### Introduction
 
 It will be particularly use full in a monorepo, where the routes definition will be able to be shared as a library that any service can use.
 
@@ -13,7 +20,7 @@ Shared-routes aims to be a unique definition for REST endpoints. But it relise o
 
 This library brings type safety and validations to those tools.&#x20;
 
-From the routes definitions you can :&#x20;
+### From the routes definitions you can :&#x20;
 
 * Create your backend with express
 * Test your routes with supertest
