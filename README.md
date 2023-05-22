@@ -1,33 +1,25 @@
----
-description: >-
-  This library is meant to make building routes between services much more dev
-  friendly and to have a strong interface contract taking advantage of
-  typescript types.
----
-
 # 👋 The shared-routes library
 
-### Introduction
+Shared-routes is a TypeScript library designed to simplify and standardize route creation between services. Particularly useful in a monorepo environment, shared-routes allows you to manage route definitions as a shared library, accessible by any service.
 
-It will be particularly use full in a monorepo, where the routes definition will be able to be shared as a library that any service can use.
+In today's development environment, ensuring the correctness of route paths when calling routes from a frontend can be challenging. While tools like [GraphQL](https://graphql.org) and [tRPC](https://trpc.io) can aid in this process, they often require significant changes to the codebase and a maintenance of a separate schema or definitions.
 
-When writing calling routes from a frontend, it is usually quite a pain to make sure that the routes are correct. There are some tools that can help for that for exemple :
+Enter shared-routes. This library uniquely defines REST endpoints, doing so with a commitment to ease of use, familiarity, and leveraging commonly used tools. It enhances popular tools such as Express, Axios, Fetch API, OpenAPI, and Supertest by adding type safety and validations.
 
-* [GraphQL](https://graphql.org) but it requires a lot of change in a code base, and there is a need to maintain a schema in the graphql query language.&#x20;
-* [tRPC](https://trpc.io) which is probably the best choice, when using typescript, when sharing definitions between a backend and a frontend only.
+### Features:
 
-Shared-routes aims to be a unique definition for REST endpoints. But it relies on usual tools like express, axios, fetchAPI, openApi or supertest.
+* **Single Definition**: Create a unique, standardized definition for your REST endpoints, reducing inconsistencies and errors.
+* **Express Integration**: Easily build your backend with Express using the shared-routes definitions.
+* **Testing with Supertest**: Test your routes directly using shared-routes with Supertest.
+* **API Calls**: Use Fetch API or Axios to make calls from a frontend or another service using the shared-routes definitions.
+* **Swagger Documentation**: Generate OpenAPI (Swagger) documentation directly from your route definitions.
+* **Type Safety**: Any changes in the route definitions will break the contract wherever it is used, thanks to TypeScript. This ensures that any updates to the definitions will be reflected across all services, increasing maintainability and reducing bugs.
 
-This library brings type safety and validations to those tools.&#x20;
+With shared-routes, we aim to provide a user-friendly interface for defining and managing your service routes, all the while ensuring type safety and validation.
 
-### From the routes definitions you can :&#x20;
 
-* Create your backend with express
-* Test your routes with supertest
-* Call it from a frontend or from another service with the fetch API or axios
-* Generate an OpenAPI (swagger) documentation
 
-If the route definition change, the contrat will break everywhere it needs to, thanks to the typesafety brought by the library.
+A full exemple of [a monorepo using pnpm workspaces can be found here](https://github.com/JeromeBu/shared-routes-demo).
 
 
 
