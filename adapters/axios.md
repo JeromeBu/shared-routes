@@ -6,6 +6,8 @@ description: The axios adapter, type safe
 
 ### Example
 
+It uses the `bookRoutes` definitions [from here](../defining-routes.md#example).
+
 ```typescript
 import axios from "axios";
 import { createAxiosSharedClient } from "shared-routes/axios";

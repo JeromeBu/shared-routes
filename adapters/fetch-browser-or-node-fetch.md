@@ -4,7 +4,11 @@ description: The fetch adapter, type safe
 
 # Fetch (browser or node-fetch)
 
+###
+
 ### Example
+
+It uses the `bookRoutes` definitions [from here](../defining-routes.md#example).
 
 ```typescript
 import { createFetchSharedClient } from "shared-routes/fetch";

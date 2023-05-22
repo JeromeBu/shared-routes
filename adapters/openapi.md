@@ -4,9 +4,11 @@ description: Generate your documentation directly from your routes
 
 # OpenAPI
 
-You can take create your openAPI spec from your routes. You can still provide extra documentation, like you would. But you get the type safety if the contracts changes.
+You can take create your openAPI spec from your routes. You can still provide extra documentation, like you would with openAPI. But you get the type safety if the contracts changes.
 
 ### Example
+
+It uses the `bookRoutes` definitions [from here](../defining-routes.md#example).
 
 ```typescript
 import { createOpenApiGenerator } from "shared-routes/openapi";

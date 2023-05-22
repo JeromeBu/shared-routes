@@ -6,6 +6,8 @@ description: The Express adapter, type safe
 
 ### Example
 
+It uses the `bookRoutes` definitions [from here](../defining-routes.md#example).
+
 ```typescript
 import supertest from "supertest";
 import { createSupertestSharedClient } from "shared-routes/supertest";
