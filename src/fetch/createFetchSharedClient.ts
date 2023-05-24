@@ -10,12 +10,12 @@ declare function browserFetch(
 
 type Fetch = typeof browserFetch | typeof nodeFetch;
 
-type FetchConfig = { baseURL?: Url };
+type FetchConfig = RequestInit & { baseURL?: Url };
 
 export const createFetchHandlerCreator =
   <SharedRoutes extends Record<string, UnknownSharedRoute>>(
     fetch: Fetch,
-    { baseURL }: FetchConfig = {},
+    options: FetchConfig = {},
   ): HandlerCreator<SharedRoutes> =>
   (routeName, routes, replaceParamsInUrl) =>
   async ({ body, urlParams, queryParams, headers } = {}): Promise<HttpResponse<any>> => {
@@ -26,14 +26,21 @@ export const createFetchHandlerCreator =
         ? "?" + queryParamsToString(queryParams as any)
         : "";
 
+    const { baseURL, ...defaultInit } = options;
+
     const res = await fetch(
       (baseURL ? baseURL : "") +
         replaceParamsInUrl(route.url, urlParams as Url) +
         stringQueryParams,
       {
+        ...(defaultInit as any),
         method: route.method,
         ...(body ? { body: JSON.stringify(body) } : {}),
-        headers: { "Content-Type": "application/json", ...(headers ?? {}) },
+        headers: {
+          "Content-Type": "application/json",
+          ...defaultInit?.headers,
+          ...(headers ?? {}),
+        },
       },
     );
     const json = await res.json();
