@@ -17,7 +17,7 @@ export type HttpResponse<ResponseBody> = {
 };
 
 // prettier-ignore
-type HandlerParams<SharedRoute extends UnknownSharedRoute> =
+export type HandlerParams<SharedRoute extends UnknownSharedRoute> =
   (PathParameters<SharedRoute["url"]> extends EmptyObj ? AnyObj : { urlParams: PathParameters<SharedRoute["url"]>})
   & (z.infer<SharedRoute["requestBodySchema"]> extends void ? AnyObj : { body: z.infer<SharedRoute["requestBodySchema"]> })
   & (z.infer<SharedRoute["queryParamsSchema"]> extends void ? AnyObj : { queryParams: z.infer<SharedRoute["queryParamsSchema"]> })

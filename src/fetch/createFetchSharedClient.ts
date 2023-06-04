@@ -2,6 +2,7 @@ import type { HttpResponse, UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
 import { queryParamsToString } from "./queryParamsToString";
 import type nodeFetch from "node-fetch";
+import { validateInputParams, validateSchemaWithExplictError } from "../validations";
 
 declare function browserFetch(
   input: RequestInfo | URL,
@@ -18,8 +19,16 @@ export const createFetchHandlerCreator =
     options: FetchConfig = {},
   ): HandlerCreator<SharedRoutes> =>
   (routeName, routes, replaceParamsInUrl) =>
-  async ({ body, urlParams, queryParams, headers } = {}): Promise<HttpResponse<any>> => {
+  async ({ urlParams, ...params } = {}): Promise<HttpResponse<any>> => {
     const route = routes[routeName];
+
+    const { body, headers, queryParams } = validateInputParams(
+      route,
+      params as any,
+      "fetch",
+    );
+
+    const bodyAsString = JSON.stringify(body);
 
     const stringQueryParams =
       queryParams && Object.keys(queryParams).length > 0
@@ -35,7 +44,7 @@ export const createFetchHandlerCreator =
       {
         ...(defaultInit as any),
         method: route.method,
-        ...(body ? { body: JSON.stringify(body) } : {}),
+        ...(bodyAsString !== "{}" ? { body: bodyAsString } : {}),
         headers: {
           "Content-Type": "application/json",
           ...defaultInit?.headers,
@@ -45,7 +54,14 @@ export const createFetchHandlerCreator =
     );
     const json = await res.json();
 
-    return { body: json, status: res.status };
+    const responseBody = validateSchemaWithExplictError({
+      adapterName: "fetch",
+      checkedSchema: "responseBodySchema",
+      params: json,
+      route,
+    });
+
+    return { body: responseBody, status: res.status };
   };
 
 export const createFetchSharedClient = <
