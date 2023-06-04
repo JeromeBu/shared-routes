@@ -116,7 +116,11 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
     const getAllBooksResponse = await supertestSharedCaller.getAllBooks({
       queryParams: { max: "yolo" as any },
     });
-    expect(getAllBooksResponse.body).toEqual(["max : Expected number, received string"]);
+    expect(getAllBooksResponse.body).toEqual({
+      message:
+        "queryParamsSchema was not respected for route GET /books in shared-routes express adapter",
+      issues: ["max : Expected number, received string"],
+    });
     expect(getAllBooksResponse.status).toBe(400);
   });
 

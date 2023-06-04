@@ -73,13 +73,6 @@ export const validateInputParams = (
     route,
   });
 
-  const headers = validateSchemaWithExplictError({
-    adapterName,
-    checkedSchema: "headersSchema",
-    params: params.headers,
-    route,
-  });
-
   const body = validateSchemaWithExplictError({
     adapterName,
     checkedSchema: "requestBodySchema",
@@ -87,5 +80,14 @@ export const validateInputParams = (
     route,
   });
 
-  return { queryParams, headers, body };
+  // we validate headers separately because we don't want to re-affect req.headers parsed value
+  // because we don't want to lose all other headers
+  validateSchemaWithExplictError({
+    adapterName,
+    checkedSchema: "headersSchema",
+    params: params.headers,
+    route,
+  });
+
+  return { queryParams, body, headers: params.headers };
 };

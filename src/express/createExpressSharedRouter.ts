@@ -2,7 +2,7 @@ import type { IRoute, RequestHandler, Router } from "express";
 import type { PathParameters, UnknownSharedRoute } from "..";
 import { keys } from "..";
 import { z, ZodError } from "zod";
-import { ValidationOptions } from "../validations";
+import { ValidationOptions, validateInputParams } from "../validations";
 
 type ExpressSharedRouterOptions = Pick<ValidationOptions, "skipInputValidation">;
 
@@ -11,15 +11,25 @@ const makeValidationMiddleware =
   (req, res, next) => {
     try {
       if (!options.skipInputValidation) {
-        req.body = route.requestBodySchema.parse(req.body) as any;
-        req.query = route.queryParamsSchema.parse(req.query) as any;
-        route.headersSchema.parse(req.headers); // we don't want to re-affect req.headers parsed value because we don't want to lose all other headers
+        const validatedParams = validateInputParams(
+          route,
+          { body: req.body, headers: req.headers, queryParams: req.query },
+          "express",
+        );
+        req.body = validatedParams.body;
+        req.query = validatedParams.queryParams as any;
+        req.headers = validatedParams.headers as any;
       }
       next();
-    } catch (e) {
-      const error = e as ZodError;
+    } catch (error: any) {
+      const zodError = error.cause as ZodError;
       res.status(400);
-      res.json(error.issues.map(({ message, path }) => `${path.join(".")} : ${message}`));
+      res.json({
+        message: error.message,
+        issues: zodError.issues.map(
+          ({ message, path }) => `${path.join(".")} : ${message}`,
+        ),
+      });
     }
   };
 
