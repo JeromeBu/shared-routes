@@ -2,16 +2,15 @@ import type { IRoute, RequestHandler, Router } from "express";
 import type { PathParameters, UnknownSharedRoute } from "..";
 import { keys } from "..";
 import { z, ZodError } from "zod";
+import { ValidationOptions } from "../validations";
 
-type ExpressSharedRouterOptions = {
-  skipRequestValidation?: boolean;
-};
+type ExpressSharedRouterOptions = Pick<ValidationOptions, "skipInputValidation">;
 
 const makeValidationMiddleware =
   (route: UnknownSharedRoute, options: ExpressSharedRouterOptions): RequestHandler =>
   (req, res, next) => {
     try {
-      if (!options.skipRequestValidation) {
+      if (!options.skipInputValidation) {
         req.body = route.requestBodySchema.parse(req.body) as any;
         req.query = route.queryParamsSchema.parse(req.query) as any;
         route.headersSchema.parse(req.headers); // we don't want to re-affect req.headers parsed value because we don't want to lose all other headers

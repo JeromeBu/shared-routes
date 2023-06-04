@@ -1,21 +1,24 @@
 import type { AxiosInstance } from "axios";
 import type { UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
-import { validateInputParams, validateSchemaWithExplictError } from "../validations";
+import {
+  ValidationOptions,
+  validateInputParams,
+  validateSchemaWithExplictError,
+} from "../validations";
 
 export const createAxiosHandlerCreator =
   <SharedRoutes extends Record<string, UnknownSharedRoute>>(
     axios: AxiosInstance,
+    options?: ValidationOptions,
   ): HandlerCreator<SharedRoutes> =>
   (routeName, routes, replaceParamsInUrl) =>
   async ({ urlParams, ...params } = {}) => {
     const route = routes[routeName];
 
-    const { body, headers, queryParams } = validateInputParams(
-      route,
-      params as any,
-      "axios",
-    );
+    const { body, headers, queryParams } = options?.skipInputValidation
+      ? params
+      : validateInputParams(route, params as any, "axios");
 
     const { data, ...rest } = await axios.request({
       method: route.method,
@@ -28,12 +31,14 @@ export const createAxiosHandlerCreator =
       },
     });
 
-    const responseBody = validateSchemaWithExplictError({
-      adapterName: "axios",
-      checkedSchema: "responseBodySchema",
-      params: data,
-      route,
-    });
+    const responseBody = options?.skipResponseValidation
+      ? data
+      : validateSchemaWithExplictError({
+          adapterName: "axios",
+          checkedSchema: "responseBodySchema",
+          params: data,
+          route,
+        });
 
     return { ...rest, body: responseBody };
   };
@@ -43,4 +48,8 @@ export const createAxiosSharedClient = <
 >(
   sharedRouters: SharedRoutes,
   axios: AxiosInstance,
-) => configureCreateHttpClient(createAxiosHandlerCreator(axios))(sharedRouters);
+  validationOptions?: ValidationOptions,
+) =>
+  configureCreateHttpClient(createAxiosHandlerCreator(axios, validationOptions))(
+    sharedRouters,
+  );

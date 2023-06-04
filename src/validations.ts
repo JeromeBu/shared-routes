@@ -1,6 +1,13 @@
 import { HandlerParams } from "./configureCreateHttpClient";
 import { UnknownSharedRoute } from "./defineRoutes";
 
+export type ValidationOptions = {
+  /* if true, will not validate request body, query params nor headers */
+  skipInputValidation?: boolean;
+  /* if true, will not validate response body */
+  skipResponseValidation?: boolean;
+};
+
 type ExtractFromExisting<T, U extends T> = Extract<T, U>;
 type CheckedSchema = ExtractFromExisting<
   keyof UnknownSharedRoute,

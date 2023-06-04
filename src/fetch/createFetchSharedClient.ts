@@ -2,7 +2,11 @@ import type { HttpResponse, UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
 import { queryParamsToString } from "./queryParamsToString";
 import type nodeFetch from "node-fetch";
-import { validateInputParams, validateSchemaWithExplictError } from "../validations";
+import {
+  ValidationOptions,
+  validateInputParams,
+  validateSchemaWithExplictError,
+} from "../validations";
 
 declare function browserFetch(
   input: RequestInfo | URL,
@@ -11,7 +15,7 @@ declare function browserFetch(
 
 type Fetch = typeof browserFetch | typeof nodeFetch;
 
-type FetchConfig = RequestInit & { baseURL?: Url };
+type FetchConfig = RequestInit & { baseURL?: Url } & ValidationOptions;
 
 export const createFetchHandlerCreator =
   <SharedRoutes extends Record<string, UnknownSharedRoute>>(
@@ -22,11 +26,9 @@ export const createFetchHandlerCreator =
   async ({ urlParams, ...params } = {}): Promise<HttpResponse<any>> => {
     const route = routes[routeName];
 
-    const { body, headers, queryParams } = validateInputParams(
-      route,
-      params as any,
-      "fetch",
-    );
+    const { body, headers, queryParams } = options.skipInputValidation
+      ? params
+      : validateInputParams(route, params as any, "fetch");
 
     const bodyAsString = JSON.stringify(body);
 
@@ -54,12 +56,14 @@ export const createFetchHandlerCreator =
     );
     const json = await res.json();
 
-    const responseBody = validateSchemaWithExplictError({
-      adapterName: "fetch",
-      checkedSchema: "responseBodySchema",
-      params: json,
-      route,
-    });
+    const responseBody = options.skipResponseValidation
+      ? json
+      : validateSchemaWithExplictError({
+          adapterName: "fetch",
+          checkedSchema: "responseBodySchema",
+          params: json,
+          route,
+        });
 
     return { body: responseBody, status: res.status };
   };

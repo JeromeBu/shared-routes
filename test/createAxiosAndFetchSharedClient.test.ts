@@ -124,6 +124,28 @@ describe("createAxiosSharedCaller", () => {
         );
       },
     );
+
+    it.each([
+      {
+        name: "axios",
+        httpClient: createAxiosSharedClient(routes, axios, { skipInputValidation: true }),
+      },
+      {
+        name: "fetch",
+        httpClient: createFetchSharedClient(routes, fetch, { skipInputValidation: true }),
+      },
+    ])(
+      "can skip the validation for input params or response, for $name",
+      async ({ httpClient }) => {
+        const response = await httpClient.addPost({ body: { wrong: "body" } as any });
+        expect(response.body).toBeTruthy();
+
+        const addPostResponse = await httpClient.addPost({
+          body: { title: "My great post", body: "Some content", userId: 1 },
+        });
+        expect(addPostResponse.body.id).toBeTypeOf("number");
+      },
+    );
   });
 
   describe("explicit error when calling without respecting the contract", () => {
