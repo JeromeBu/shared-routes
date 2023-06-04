@@ -90,31 +90,40 @@ describe("createAxiosSharedCaller", () => {
     it.each([
       { name: "axios", httpClient: createAxiosSharedClient(routes, axios) },
       { name: "fetch", httpClient: createFetchSharedClient(routes, fetch) },
-    ])("actually calls a placeholder endpoint, using $name", async ({ httpClient }) => {
-      expect(listRoutes(routes)).toEqual([
-        "GET https://jsonplaceholder.typicode.com/todos/:todoid",
-        "POST https://jsonplaceholder.typicode.com/posts",
-      ]);
+    ])(
+      "actually calls a placeholder endpoint, using $name",
+      async ({ httpClient, name }) => {
+        expect(listRoutes(routes)).toEqual([
+          "GET https://jsonplaceholder.typicode.com/todos/:todoId",
+          "POST https://jsonplaceholder.typicode.com/posts",
+        ]);
 
-      const response = await httpClient.getByTodoById({
-        urlParams: { todoId: "3" },
-        queryParams: { userId: 1, max: undefined },
-      });
-      const expectedResponseBody: z.infer<typeof todoSchema> = {
-        id: 3,
-        userId: 1,
-        completed: false,
-        title: "fugiat veniam minus",
-      };
-      expect(response.body).toEqual(expectedResponseBody);
-      expect(response.status).toBe(200);
+        const response = await httpClient.getByTodoById({
+          urlParams: { todoId: "3" },
+          queryParams: { userId: 1, max: undefined },
+        });
+        const expectedResponseBody: z.infer<typeof todoSchema> = {
+          id: 3,
+          userId: 1,
+          completed: false,
+          title: "fugiat veniam minus",
+        };
+        expect(response.body).toEqual(expectedResponseBody);
+        expect(response.status).toBe(200);
 
-      const addPostResponse = await httpClient.addPost({
-        body: { title: "My great post", body: "Some content", userId: 1 },
-      });
-      expect(addPostResponse.body.id).toBeTypeOf("number");
-      expect(addPostResponse.status).toBe(201);
-    });
+        const addPostResponse = await httpClient.addPost({
+          body: { title: "My great post", body: "Some content", userId: 1 },
+        });
+        expect(addPostResponse.body.id).toBeTypeOf("number");
+        expect(addPostResponse.status).toBe(201);
+
+        await expect(
+          httpClient.addPost({ body: { wrong: "body" } as any }),
+        ).rejects.toThrow(
+          `requestBodySchema was not respected for route POST https://jsonplaceholder.typicode.com/posts in shared-routes ${name} adapter`,
+        );
+      },
+    );
   });
 
   describe("explicit error when calling without respecting the contract", () => {
@@ -144,20 +153,14 @@ describe("createAxiosSharedCaller", () => {
 
     it("when query params are wrong", async () => {
       await expect(
-        httpClient.getTodos({
-          queryParams: { userWrongKey: "yolo" } as any,
-        }),
+        httpClient.getTodos({ queryParams: { userWrongKey: "yolo" } as any }),
       ).rejects.toThrow(
         "queryParamsSchema was not respected for route GET https://jsonplaceholder.typicode.com/todos in shared-routes fetch adapter",
       );
     });
 
     it("when response body is wrong", async () => {
-      await expect(
-        httpClient.getTodos({
-          queryParams: { userId: 1 },
-        }),
-      ).rejects.toThrow(
+      await expect(httpClient.getTodos({ queryParams: { userId: 1 } })).rejects.toThrow(
         "responseBodySchema was not respected for route GET https://jsonplaceholder.typicode.com/todos in shared-routes fetch adapter",
       );
     });

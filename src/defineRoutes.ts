@@ -63,7 +63,7 @@ const verifyRoutesUniqAndListRoutes = <T extends Record<string, UnknownSharedRou
   const occurrencesByMethodAndUrl: Record<string, number> = {};
 
   for (const route of Object.values(routes) as UnknownSharedRoute[]) {
-    const name = `${route.method.toUpperCase()} ${route.url.toLowerCase()}`;
+    const name = `${route.method.toUpperCase()} ${route.url}`;
     const occurrence = (occurrencesByMethodAndUrl[name] ?? 0) + 1;
     if (occurrence > 1)
       throw new Error(

@@ -1,14 +1,21 @@
 import type { AxiosInstance } from "axios";
 import type { UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
+import { validateInputParams, validateSchemaWithExplictError } from "../validations";
 
 export const createAxiosHandlerCreator =
   <SharedRoutes extends Record<string, UnknownSharedRoute>>(
     axios: AxiosInstance,
   ): HandlerCreator<SharedRoutes> =>
   (routeName, routes, replaceParamsInUrl) =>
-  async ({ body, urlParams, queryParams, headers } = {}) => {
+  async ({ urlParams, ...params } = {}) => {
     const route = routes[routeName];
+
+    const { body, headers, queryParams } = validateInputParams(
+      route,
+      params as any,
+      "axios",
+    );
 
     const { data, ...rest } = await axios.request({
       method: route.method,
@@ -21,7 +28,14 @@ export const createAxiosHandlerCreator =
       },
     });
 
-    return { ...rest, body: data };
+    const responseBody = validateSchemaWithExplictError({
+      adapterName: "axios",
+      checkedSchema: "responseBodySchema",
+      params: data,
+      route,
+    });
+
+    return { ...rest, body: responseBody };
   };
 
 export const createAxiosSharedClient = <
