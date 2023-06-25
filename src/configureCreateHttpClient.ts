@@ -1,5 +1,10 @@
 import { z } from "zod";
-import type { SharedRoute, UnknownSharedRoute } from "./defineRoutes";
+import type {
+  ResponsesToHttpResponse,
+  SharedRoute,
+  UnknownResponses,
+  UnknownSharedRoute,
+} from "./defineRoutes";
 import {
   PathParameters,
   replaceParamsInUrl,
@@ -11,8 +16,8 @@ import {
 type AnyObj = Record<string, unknown>;
 type EmptyObj = Record<string, never>;
 
-export type HttpResponse<ResponseBody> = {
-  status: number;
+export type HttpResponse<Status extends number, ResponseBody> = {
+  status: Status;
   body: ResponseBody;
 };
 
@@ -25,15 +30,15 @@ export type HandlerParams<SharedRoute extends UnknownSharedRoute> =
 
 export type Handler<SharedRoute extends UnknownSharedRoute> = (
   params: HandlerParams<SharedRoute> | EmptyObj,
-) => Promise<HttpResponse<z.infer<SharedRoute["responseBodySchema"]>>>;
+) => Promise<ResponsesToHttpResponse<SharedRoute["responses"]>>;
 
 export type HttpClient<SharedRoutes extends Record<string, UnknownSharedRoute>> = {
   [RouteName in keyof SharedRoutes]: (
     // prettier-ignore
-    ...params: [SharedRoutes[RouteName], PathParameters<SharedRoutes[RouteName]["url"]>] extends [SharedRoute<Url, void, void, unknown, void>, EmptyObj]
+    ...params: [SharedRoutes[RouteName], PathParameters<SharedRoutes[RouteName]["url"]>] extends [SharedRoute<Url, void, void, UnknownResponses, void>, EmptyObj]
       ? []
       : [HandlerParams<SharedRoutes[RouteName]>]
-  ) => Promise<HttpResponse<z.infer<SharedRoutes[RouteName]["responseBodySchema"]>>>;
+  ) => Promise<ResponsesToHttpResponse<SharedRoutes[RouteName]["responses"]>>;
 };
 
 export type HandlerCreator<SharedRoutes extends Record<string, UnknownSharedRoute>> = <

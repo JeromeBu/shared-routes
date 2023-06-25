@@ -32,17 +32,20 @@ const routes = defineRoutes({
     method: "get",
     url: "/books",
     queryParamsSchema: z.object({ max: zNumberFromString }),
-    responseBodySchema: z.array(bookSchema),
+    responses: { 200: z.array(bookSchema) },
   }),
   getBookByTitle: defineRoute({
     method: "get",
     url: "/books/:title",
-    responseBodySchema: bookSchema.optional(),
+    responses: {
+      200: bookSchema,
+      404: z.object({ message: z.string() }),
+    },
   }),
   getBookWithoutParams: defineRoute({
     method: "get",
     url: "/no-params",
-    responseBodySchema: bookSchema.optional(),
+    responses: { 200: bookSchema.optional() },
   }),
 });
 
@@ -68,8 +71,15 @@ const createBookRouter = (): ExpressRouter => {
   });
 
   expressSharedRouter.getBookByTitle((req, res) => {
+    if (req.params.title === "throw") throw new Error("Some unexpected error");
+
     const book = bookDB.find((b) => b.title === req.params.title);
-    return res.json(book);
+
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+
+    return res.status(200).json(book);
   });
 
   expressSharedRouter.getBookWithoutParams((_, res) => {
@@ -118,7 +128,7 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
     });
     expect(getAllBooksResponse.body).toEqual({
       message:
-        "queryParamsSchema was not respected for route GET /books in shared-routes express adapter",
+        "Shared-route schema 'queryParamsSchema' was not respected in adapter 'express'.\nRoute: GET /books",
       issues: ["max : Expected number, received string"],
     });
     expect(getAllBooksResponse.status).toBe(400);
@@ -153,13 +163,37 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
     const fetchedBookResponse = await supertestSharedCaller.getBookByTitle({
       urlParams: { title: "Hey" },
     });
-    expectToEqual(fetchedBookResponse.body, heyBook);
-    expect(fetchedBookResponse.status).toBe(200);
+
+    expectToEqual(fetchedBookResponse, {
+      status: 200,
+      body: heyBook,
+    });
+
+    const bookNotFoundResponse = await supertestSharedCaller.getBookByTitle({
+      urlParams: { title: "not found" },
+    });
+
+    expectToEqual(bookNotFoundResponse, {
+      status: 404,
+      body: { message: "Book not found" },
+    });
 
     // should compile without having to provide any params
     const { body, status } = await supertestSharedCaller.getBookWithoutParams();
     expect(body).toBe(""); // express returns "" for void
     expect(status).toEqual(200);
+  });
+
+  it("shows when unexpected error occurs (though it does not respect schema)", async () => {
+    const app = createExempleApp();
+    const supertestRequest = supertest(app);
+    const supertestSharedCaller = createSupertestSharedClient(routes, supertestRequest);
+
+    const result = await supertestSharedCaller.getBookByTitle({
+      urlParams: { title: "throw" },
+    });
+    expect(result.status).toBe(500);
+    expect((result as any).text).toContain("Some unexpected error");
   });
 });
 
@@ -171,7 +205,7 @@ const expectToEqual = <T>(actual: T, expected: T) => expect(actual).toEqual(expe
 //   author: z.string(),
 // });
 
-export const _routes = defineRoutes({
+const _routes = defineRoutes({
   addBook: defineRoute({
     method: "post",
     url: "/books",
@@ -181,15 +215,17 @@ export const _routes = defineRoutes({
     method: "get",
     url: "/books",
     queryParamsSchema: z.object({ max: z.number() }),
-    responseBodySchema: z.array(bookSchema),
+    responses: {
+      200: z.array(bookSchema),
+    },
   }),
   getBookByTitle: defineRoute({
     method: "get",
     url: "/books/:title",
     headersSchema: z.object({ authorization: z.string() }),
-    responseBodySchema: z.union([bookSchema, z.undefined()]),
+    responses: {
+      200: bookSchema,
+      404: z.object({ message: z.string() }),
+    },
   }),
 });
-
-// const expressRouter = new
-// const expressSharedRouter = createExpressSharedRouter(_routes, express.Router()).expressSharedRouter;

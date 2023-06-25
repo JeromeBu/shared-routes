@@ -7,7 +7,7 @@
     "url": "git@github.com:JeromeBu/shared-routes.git"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit && tsc --noEmit -p test",
+    "typecheck": "tsc --noEmit -p test",
     "build": "yarn build:cjs && yarn build:esm && yarn build:deno",
     "watch": "tsc -w & tsc -p tsconfig.esm.json -w",
     "build:cjs": "tsc",
@@ -73,7 +73,6 @@
     "zod": "^3.21.4",
     "zod-to-json-schema": "^3.21.0"
   },
-  "dependencies": {},
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/esm/index.mjs",

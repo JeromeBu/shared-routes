@@ -15,7 +15,7 @@ describe("Shared routes definitions", () => {
           getAllBooks: defineRoute({
             method: "post",
             url: "/books",
-            responseBodySchema: z.array(z.object({ id: z.string(), name: z.string() })),
+            responses: { 200: z.array(z.object({ id: z.string(), name: z.string() })) },
           }),
         });
 
@@ -37,7 +37,7 @@ describe("Shared routes definitions", () => {
           method: "get",
           url: "/books",
           queryParamsSchema: z.object({ lala: z.string() }),
-          responseBodySchema: z.array(z.object({ id: z.string(), name: z.string() })),
+          responses: { 200: z.array(z.object({ id: z.string(), name: z.string() })) },
         }),
       });
 

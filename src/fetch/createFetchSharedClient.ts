@@ -23,7 +23,7 @@ export const createFetchHandlerCreator =
     options: FetchConfig = {},
   ): HandlerCreator<SharedRoutes> =>
   (routeName, routes, replaceParamsInUrl) =>
-  async ({ urlParams, ...params } = {}): Promise<HttpResponse<any>> => {
+  async ({ urlParams, ...params } = {}): Promise<HttpResponse<any, any>> => {
     const route = routes[routeName];
 
     const { body, headers, queryParams } = options.skipInputValidation
@@ -60,7 +60,8 @@ export const createFetchHandlerCreator =
       ? json
       : validateSchemaWithExplictError({
           adapterName: "fetch",
-          checkedSchema: "responseBodySchema",
+          checkedSchema: "responses",
+          responseStatus: res.status as any,
           params: json,
           route,
         });

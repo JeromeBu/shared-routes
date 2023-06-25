@@ -1,10 +1,34 @@
-import { z } from "zod";
+import { z, ZodVoid } from "zod";
 import type { Url } from "./pathParameters";
 
-type OptionalFields<RequestBody, Query, ResponseBody, Headers> = {
+export type UnknownResponses = { [K: number]: z.ZodSchema<unknown> };
+
+export type ValueOf<T> = T[keyof T];
+
+export type ResponsesToHttpResponse<Responses extends UnknownResponses> = ValueOf<
+  {
+    [K in keyof Responses]: { status: K; body: z.infer<Responses[K]> };
+  }
+>;
+
+// const responses = {
+//   200: z.object({ foo: z.string() }),
+//   400: z.object({ bar: z.string() }),
+// } satisfies UnknownResponses;
+
+// z.infer<SharedRoutes[Route]["responses"][number]>,
+// type MyResponses = typeof responses;
+
+// type AcceptedResponse = ResponsesToHttpResponse<MyResponses>
+// declare const a: AcceptedResponse
+// if(a.status === 200) {
+//   a.body.foo
+// }
+
+type OptionalFields<RequestBody, Query, Responses extends UnknownResponses, Headers> = {
   requestBodySchema?: z.Schema<RequestBody>;
   queryParamsSchema?: z.Schema<Query>;
-  responseBodySchema?: z.Schema<ResponseBody>;
+  responses?: Responses;
   headersSchema?: z.Schema<Headers>;
 };
 
@@ -18,24 +42,30 @@ type SharedRouteWithOptional<
   U extends Url,
   RequestBody,
   Query,
-  ResponseBody,
+  Responses extends UnknownResponses,
   Headers,
-> = MethodAndUrl<U> & OptionalFields<RequestBody, Query, ResponseBody, Headers>;
+> = MethodAndUrl<U> & OptionalFields<RequestBody, Query, Responses, Headers>;
 
 export type SharedRoute<
   U extends Url,
   RequestBody,
   Query,
-  ResponseBody,
+  Responses extends UnknownResponses,
   Headers,
-> = MethodAndUrl<U> & Required<OptionalFields<RequestBody, Query, ResponseBody, Headers>>;
+> = MethodAndUrl<U> & Required<OptionalFields<RequestBody, Query, Responses, Headers>>;
 
-export type UnknownSharedRoute = SharedRoute<Url, unknown, unknown, unknown, unknown>;
+export type UnknownSharedRoute = SharedRoute<
+  Url,
+  unknown,
+  unknown,
+  UnknownResponses,
+  unknown
+>;
 export type UnknownSharedRouteWithUrl<U extends Url> = SharedRoute<
   U,
   unknown,
   unknown,
-  unknown,
+  UnknownResponses,
   unknown
 >;
 
@@ -43,14 +73,14 @@ export const defineRoute = <
   U extends Url,
   RequestBody = void,
   Query = void,
-  ResponseBody = void,
+  Responses extends UnknownResponses = { 201: ZodVoid },
   Headers = void,
 >(
-  route: SharedRouteWithOptional<U, RequestBody, Query, ResponseBody, Headers>,
-): SharedRoute<U, RequestBody, Query, ResponseBody, Headers> => ({
+  route: SharedRouteWithOptional<U, RequestBody, Query, Responses, Headers>,
+): SharedRoute<U, RequestBody, Query, Responses, Headers> => ({
   requestBodySchema: z.object({}).strict() as any,
   queryParamsSchema: z.object({}).strict() as any,
-  responseBodySchema: z.void() as any,
+  responses: { 201: z.void() } as any,
   headersSchema: z.object({}) as any,
   ...route,
 });

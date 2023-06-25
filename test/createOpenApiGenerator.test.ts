@@ -15,12 +15,12 @@ const routes = defineRoutes({
       max: z.number().optional(),
       truc: z.string(),
     }),
-    responseBodySchema: z.array(bookSchema),
+    responses: { 200: z.array(bookSchema) },
   }),
   getByTitle: defineRoute({
     url: "/books/:title",
     method: "get",
-    responseBodySchema: bookSchema,
+    responses: { 200: bookSchema },
   }),
   addBook: defineRoute({
     url: "/books",
@@ -56,6 +56,20 @@ const openApiJSON = generateOpenApi({
             author: { example: "JK Rowlings" },
           },
         },
+        responses: {
+          201: {
+            description: "Success 201 for addBook. Returns void",
+          },
+        },
+      },
+    },
+    getByTitle: {
+      extraDocs: {
+        responses: {
+          "200": {
+            description: "Success 200 for getByTitle",
+          },
+        },
       },
     },
     getAllBooks: {
@@ -65,6 +79,11 @@ const openApiJSON = generateOpenApi({
         queryParams: {
           max: { example: 15 },
           truc: { example: "machin..." },
+        },
+        responses: {
+          200: {
+            description: "Success 200 for getAllBooks",
+          },
         },
       },
     },
@@ -97,7 +116,7 @@ const expected: OpenAPIV3.Document = {
         ],
         responses: {
           "200": {
-            description: "Success",
+            description: "Success 200 for getByTitle",
             content: {
               "application/json": {
                 schema: bookJsonSchema,
@@ -130,7 +149,7 @@ const expected: OpenAPIV3.Document = {
         ],
         responses: {
           "200": {
-            description: "Success",
+            description: "Success 200 for getAllBooks",
             content: {
               "application/json": {
                 schema: {
@@ -169,8 +188,8 @@ const expected: OpenAPIV3.Document = {
           required: true,
         },
         responses: {
-          "200": {
-            description: "Success, with void response",
+          "201": {
+            description: "Success 201 for addBook. Returns void",
           },
         },
       },
