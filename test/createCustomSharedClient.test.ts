@@ -20,12 +20,12 @@ const myRoutes = defineRoutes({
     method: "get",
     url: "/books",
     queryParamsSchema: z.object({ max: z.number() }),
-    responseBodySchema: z.array(bookSchema),
+    responses: { 200: z.array(bookSchema) },
   }),
   getByTitle: defineRoute({
     method: "get",
     url: "/books/:title",
-    responseBodySchema: bookSchema.optional(),
+    responses: { 200: bookSchema.optional() },
   }),
 });
 
@@ -37,14 +37,14 @@ const createTestHttpClient = () => {
   return createCustomSharedClient(myRoutes, {
     addBook: async ({ body }) => {
       books.push(body);
-      return { status: 200, body: undefined };
+      return { status: 201 as const, body: undefined };
     },
     getAllBooks: async () => ({
-      status: 200,
+      status: 200 as const,
       body: books,
     }),
     getByTitle: async ({ urlParams: { title } }) => ({
-      status: 200,
+      status: 200 as const,
       body: books.find((book) => book.title.toLowerCase().includes(title.toLowerCase())),
     }),
   });
@@ -60,7 +60,7 @@ describe("createCustomSharedClient", () => {
       body: myBook,
       headers: { authorization: "my-token" },
     });
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     expect(response.body).toBe(undefined);
 
     const { body: allBooks } = await httpClient.getAllBooks({

@@ -22,11 +22,12 @@ describe("createAxiosSharedCaller", () => {
         method: "get",
         url: "/books",
         queryParamsSchema: z.object({ max: z.number() }),
-        responseBodySchema: z.array(bookSchema),
+        responses: { 200: z.array(bookSchema) },
       }),
       getByTitle: defineRoute({
         method: "get",
         url: "/books/:title",
+        responses: { 200: bookSchema, 404: z.object({ message: z.string() }) },
       }),
     });
 
@@ -55,7 +56,12 @@ describe("createAxiosSharedCaller", () => {
       const getByTitleResponse = await axiosSharedCaller.getByTitle({
         urlParams: { title: "great" },
       });
-      getByTitleResponse.body; // type is Book[], as expected
+
+      if (getByTitleResponse.status === 404) {
+        getByTitleResponse.body; // type is { message: string }, as expected
+      } else {
+        getByTitleResponse.body; // type is Book, as expected
+      }
     };
   });
 
@@ -73,7 +79,10 @@ describe("createAxiosSharedCaller", () => {
         method: "get",
         url: "https://jsonplaceholder.typicode.com/todos/:todoId",
         queryParamsSchema: z.object({ userId: z.number(), max: z.number().optional() }),
-        responseBodySchema: todoSchema,
+        responses: {
+          200: todoSchema,
+          400: z.object({ message: z.string() }),
+        },
       }),
       addPost: defineRoute({
         method: "post",
@@ -83,7 +92,17 @@ describe("createAxiosSharedCaller", () => {
           body: z.string(),
           userId: z.number(),
         }),
-        responseBodySchema: z.object({ id: z.number() }),
+        responses: { 201: z.object({ id: z.number() }) },
+      }),
+      updatePostWithIncorrectReturnCode: defineRoute({
+        method: "put",
+        url: "https://jsonplaceholder.typicode.com/posts/:postId",
+        requestBodySchema: z.object({
+          title: z.string(),
+          body: z.string(),
+          userId: z.number(),
+        }),
+        responses: { 208: z.object({ id: z.number() }) },
       }),
     });
 
@@ -96,6 +115,7 @@ describe("createAxiosSharedCaller", () => {
         expect(listRoutes(routes)).toEqual([
           "GET https://jsonplaceholder.typicode.com/todos/:todoId",
           "POST https://jsonplaceholder.typicode.com/posts",
+          "PUT https://jsonplaceholder.typicode.com/posts/:postId",
         ]);
 
         const response = await httpClient.getByTodoById({
@@ -108,6 +128,7 @@ describe("createAxiosSharedCaller", () => {
           completed: false,
           title: "fugiat veniam minus",
         };
+
         expect(response.body).toEqual(expectedResponseBody);
         expect(response.status).toBe(200);
 
@@ -120,7 +141,23 @@ describe("createAxiosSharedCaller", () => {
         await expect(
           httpClient.addPost({ body: { wrong: "body" } as any }),
         ).rejects.toThrow(
-          `requestBodySchema was not respected for route POST https://jsonplaceholder.typicode.com/posts in shared-routes ${name} adapter`,
+          [
+            `Shared-route schema 'requestBodySchema' was not respected in adapter '${name}'.`,
+            "Route: POST https://jsonplaceholder.typicode.com/posts",
+          ].join("\n"),
+        );
+
+        await expect(
+          httpClient.updatePostWithIncorrectReturnCode({
+            urlParams: { postId: "1" },
+            body: { title: "My great post", body: "Some content", userId: 1 },
+          }),
+        ).rejects.toThrow(
+          [
+            `Shared-route schema 'responses' was not respected in adapter '${name}'.`,
+            "Received status: 200. Handled statuses: 208.",
+            "Route: PUT https://jsonplaceholder.typicode.com/posts/:postId",
+          ].join("\n"),
         );
       },
     );
@@ -161,7 +198,7 @@ describe("createAxiosSharedCaller", () => {
         method: "get",
         url: "https://jsonplaceholder.typicode.com/todos",
         queryParamsSchema: z.object({ userId: z.number(), max: z.number().optional() }),
-        responseBodySchema: z.array(z.number()), // this is not the correct schema, we want to trigger an error on return
+        responses: { 200: z.array(z.number()) }, // this is not the correct schema, we want to trigger an error on return
       }),
       addTodo: defineRoute({
         method: "post",
@@ -177,13 +214,20 @@ describe("createAxiosSharedCaller", () => {
       await expect(
         httpClient.getTodos({ queryParams: { userWrongKey: "yolo" } as any }),
       ).rejects.toThrow(
-        "queryParamsSchema was not respected for route GET https://jsonplaceholder.typicode.com/todos in shared-routes fetch adapter",
+        [
+          `Shared-route schema 'queryParamsSchema' was not respected in adapter 'fetch'.`,
+          "Route: GET https://jsonplaceholder.typicode.com/todos",
+        ].join("\n"),
       );
     });
 
     it("when response body is wrong", async () => {
       await expect(httpClient.getTodos({ queryParams: { userId: 1 } })).rejects.toThrow(
-        "responseBodySchema was not respected for route GET https://jsonplaceholder.typicode.com/todos in shared-routes fetch adapter",
+        [
+          "Shared-route schema 'responses' was not respected in adapter 'fetch'.",
+          "Received status: 200. Handled statuses: 200.",
+          "Route: GET https://jsonplaceholder.typicode.com/todos",
+        ].join("\n"),
       );
     });
 
@@ -194,7 +238,10 @@ describe("createAxiosSharedCaller", () => {
           headers: { authorization: "some-token" },
         }),
       ).rejects.toThrow(
-        "requestBodySchema was not respected for route POST https://jsonplaceholder.typicode.com/todos in shared-routes fetch adapter",
+        [
+          "Shared-route schema 'requestBodySchema' was not respected in adapter 'fetch'.",
+          "Route: POST https://jsonplaceholder.typicode.com/todos",
+        ].join("\n"),
       );
     });
 
@@ -205,7 +252,10 @@ describe("createAxiosSharedCaller", () => {
           headers: { auth: "some-token" } as any,
         }),
       ).rejects.toThrow(
-        "headersSchema was not respected for route POST https://jsonplaceholder.typicode.com/todos in shared-routes fetch adapter",
+        [
+          "Shared-route schema 'headersSchema' was not respected in adapter 'fetch'.",
+          "Route: POST https://jsonplaceholder.typicode.com/todos",
+        ].join("\n"),
       );
     });
   });

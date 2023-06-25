@@ -11,7 +11,7 @@ export type ValidationOptions = {
 type ExtractFromExisting<T, U extends T> = Extract<T, U>;
 type CheckedSchema = ExtractFromExisting<
   keyof UnknownSharedRoute,
-  "queryParamsSchema" | "requestBodySchema" | "headersSchema" | "responseBodySchema"
+  "queryParamsSchema" | "requestBodySchema" | "headersSchema" | "responses"
 >;
 
 const explicitError = ({
@@ -19,45 +19,63 @@ const explicitError = ({
   error,
   adapterName,
   checkedSchema,
+  statusCode,
 }: {
   route: UnknownSharedRoute;
   error: unknown;
   adapterName: string;
   checkedSchema: CheckedSchema;
+  statusCode?: number;
 }): Error => {
   const newError = new Error(
     [
-      checkedSchema,
-      "was not respected for route",
-      route.method.toUpperCase(),
-      route.url,
-      "in shared-routes",
-      adapterName,
-      "adapter",
-    ].join(" "),
+      `Shared-route schema '${checkedSchema}' was not respected in adapter '${adapterName}'.`,
+      checkedSchema === "responses" &&
+        `Received status: ${statusCode}. Handled statuses: ${Object.keys(
+          route.responses,
+        ).join(", ")}.`,
+      `Route: ${route.method.toUpperCase()} ${route.url}`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
   );
   (newError as any).cause = error;
   return newError;
 };
 
-export const validateSchemaWithExplictError = ({
+export const validateSchemaWithExplictError = <R extends UnknownSharedRoute>({
   checkedSchema,
   params = {},
   route,
   adapterName,
+  responseStatus,
 }: {
   checkedSchema: ExtractFromExisting<
     keyof UnknownSharedRoute,
-    "queryParamsSchema" | "requestBodySchema" | "headersSchema" | "responseBodySchema"
+    "queryParamsSchema" | "requestBodySchema" | "headersSchema" | "responses"
   >;
   params: unknown;
-  route: UnknownSharedRoute;
+  route: R;
   adapterName: string;
+  responseStatus?: CheckedSchema extends "responses" ? keyof R["responses"] : never;
 }) => {
   try {
+    if (checkedSchema === "responses") {
+      if (!responseStatus)
+        throw new Error("a response status is required when validating responses");
+      const schema = route[checkedSchema][responseStatus];
+      if (!schema) throw new Error("No schema found for this status.");
+      return schema.parse(params);
+    }
     return route[checkedSchema].parse(params);
   } catch (error) {
-    throw explicitError({ route, error, adapterName, checkedSchema });
+    throw explicitError({
+      route,
+      error,
+      adapterName,
+      checkedSchema,
+      statusCode: responseStatus,
+    });
   }
 };
 

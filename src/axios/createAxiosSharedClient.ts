@@ -20,7 +20,7 @@ export const createAxiosHandlerCreator =
       ? params
       : validateInputParams(route, params as any, "axios");
 
-    const { data, ...rest } = await axios.request({
+    const { data, status, ...rest } = await axios.request({
       method: route.method,
       url: replaceParamsInUrl(route.url, urlParams as Url),
       data: body,
@@ -35,12 +35,13 @@ export const createAxiosHandlerCreator =
       ? data
       : validateSchemaWithExplictError({
           adapterName: "axios",
-          checkedSchema: "responseBodySchema",
+          checkedSchema: "responses",
+          responseStatus: status as any,
           params: data,
           route,
         });
 
-    return { ...rest, body: responseBody };
+    return { ...rest, status, body: responseBody };
   };
 
 export const createAxiosSharedClient = <
