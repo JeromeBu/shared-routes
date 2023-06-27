@@ -183,80 +183,80 @@ describe("createAxiosSharedCaller", () => {
         expect(addPostResponse.body.id).toBeTypeOf("number");
       },
     );
-  });
 
-  describe("explicit error when calling without respecting the contract", () => {
-    const todoSchema = z.object({
-      userId: z.number(),
-      id: z.number(),
-      title: z.string(),
-      completed: z.boolean(),
-    });
+    describe("explicit error when calling without respecting the contract", () => {
+      const todoSchema = z.object({
+        userId: z.number(),
+        id: z.number(),
+        title: z.string(),
+        completed: z.boolean(),
+      });
 
-    const routes = defineRoutes({
-      getTodos: defineRoute({
-        method: "get",
-        url: "https://jsonplaceholder.typicode.com/todos",
-        queryParamsSchema: z.object({ userId: z.number(), max: z.number().optional() }),
-        responses: { 200: z.array(z.number()) }, // this is not the correct schema, we want to trigger an error on return
-      }),
-      addTodo: defineRoute({
-        method: "post",
-        url: "https://jsonplaceholder.typicode.com/todos",
-        requestBodySchema: todoSchema,
-        headersSchema: z.object({ authorization: z.string() }),
-      }),
-    });
-
-    const httpClient = createFetchSharedClient(routes, fetch);
-
-    it("when query params are wrong", async () => {
-      await expect(
-        httpClient.getTodos({ queryParams: { userWrongKey: "yolo" } as any }),
-      ).rejects.toThrow(
-        [
-          `Shared-route schema 'queryParamsSchema' was not respected in adapter 'fetch'.`,
-          "Route: GET https://jsonplaceholder.typicode.com/todos",
-        ].join("\n"),
-      );
-    });
-
-    it("when response body is wrong", async () => {
-      await expect(httpClient.getTodos({ queryParams: { userId: 1 } })).rejects.toThrow(
-        [
-          "Shared-route schema 'responses' was not respected in adapter 'fetch'.",
-          "Received status: 200. Handled statuses: 200.",
-          "Route: GET https://jsonplaceholder.typicode.com/todos",
-        ].join("\n"),
-      );
-    });
-
-    it("when request body is wrong", async () => {
-      await expect(
-        httpClient.addTodo({
-          body: { wrong: "yolo" } as any,
-          headers: { authorization: "some-token" },
+      const routes = defineRoutes({
+        getTodos: defineRoute({
+          method: "get",
+          url: "https://jsonplaceholder.typicode.com/todos",
+          queryParamsSchema: z.object({ userId: z.number(), max: z.number().optional() }),
+          responses: { 200: z.array(z.number()) }, // this is not the correct schema, we want to trigger an error on return
         }),
-      ).rejects.toThrow(
-        [
-          "Shared-route schema 'requestBodySchema' was not respected in adapter 'fetch'.",
-          "Route: POST https://jsonplaceholder.typicode.com/todos",
-        ].join("\n"),
-      );
-    });
-
-    it("when headers are wrong", async () => {
-      await expect(
-        httpClient.addTodo({
-          body: { id: 123, userId: 456, title: "some title", completed: false },
-          headers: { auth: "some-token" } as any,
+        addTodo: defineRoute({
+          method: "post",
+          url: "https://jsonplaceholder.typicode.com/todos",
+          requestBodySchema: todoSchema,
+          headersSchema: z.object({ authorization: z.string() }),
         }),
-      ).rejects.toThrow(
-        [
-          "Shared-route schema 'headersSchema' was not respected in adapter 'fetch'.",
-          "Route: POST https://jsonplaceholder.typicode.com/todos",
-        ].join("\n"),
-      );
+      });
+
+      const httpClient = createFetchSharedClient(routes, fetch);
+
+      it("when query params are wrong", async () => {
+        await expect(
+          httpClient.getTodos({ queryParams: { userWrongKey: "yolo" } as any }),
+        ).rejects.toThrow(
+          [
+            `Shared-route schema 'queryParamsSchema' was not respected in adapter 'fetch'.`,
+            "Route: GET https://jsonplaceholder.typicode.com/todos",
+          ].join("\n"),
+        );
+      });
+
+      it("when response body is wrong", async () => {
+        await expect(httpClient.getTodos({ queryParams: { userId: 1 } })).rejects.toThrow(
+          [
+            "Shared-route schema 'responses' was not respected in adapter 'fetch'.",
+            "Received status: 200. Handled statuses: 200.",
+            "Route: GET https://jsonplaceholder.typicode.com/todos",
+          ].join("\n"),
+        );
+      });
+
+      it("when request body is wrong", async () => {
+        await expect(
+          httpClient.addTodo({
+            body: { wrong: "yolo" } as any,
+            headers: { authorization: "some-token" },
+          }),
+        ).rejects.toThrow(
+          [
+            "Shared-route schema 'requestBodySchema' was not respected in adapter 'fetch'.",
+            "Route: POST https://jsonplaceholder.typicode.com/todos",
+          ].join("\n"),
+        );
+      });
+
+      it("when headers are wrong", async () => {
+        await expect(
+          httpClient.addTodo({
+            body: { id: 123, userId: 456, title: "some title", completed: false },
+            headers: { auth: "some-token" } as any,
+          }),
+        ).rejects.toThrow(
+          [
+            "Shared-route schema 'headersSchema' was not respected in adapter 'fetch'.",
+            "Route: POST https://jsonplaceholder.typicode.com/todos",
+          ].join("\n"),
+        );
+      });
     });
   });
 });
