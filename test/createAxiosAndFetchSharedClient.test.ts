@@ -65,7 +65,7 @@ describe("createAxiosSharedCaller", () => {
     };
   });
 
-  describe("Actually calling an endpoint", () => {
+  describe.skip("Actually calling an endpoint", () => {
     // WARNING : This test uses an actual placeholder api (which might not always be available...)
     const todoSchema = z.object({
       userId: z.number(),
