@@ -15,7 +15,7 @@ Enter shared-routes. This library uniquely defines REST endpoints, doing so with
 * **Swagger Documentation**: Generate OpenAPI (Swagger) documentation directly from your route definitions.
 * **Type Safety**: Any changes in the route definitions will break the contract wherever it is used, thanks to TypeScript. This ensures that any updates to the definitions will be reflected across all services, increasing maintainability and reducing bugs.
 
-shared-routes aims to provide a user-friendly interface for defining and managing your service routes, all the while ensuring type safety and validation.
+`shared-routes` aims to provide a user-friendly interface for defining and managing your service routes, all the while ensuring type safety and validation.
 
 
 
