@@ -22,7 +22,7 @@ type DefineRoutes = <T extends Record<string, SharedRoutes>>(routes: T) => T
 
 #### defineRoute
 
-Very usefull to create routes, and is necessary to insure good type inference. The parameters are given as an object, with the following keys:
+Very useful to create routes, and is necessary to insure good type inference. The parameters are given as an object, with the following keys:
 
 ```typescript
 type DefineRouteParams = {
@@ -34,11 +34,13 @@ type DefineRouteParams = {
     requestBodySchema: z.Schema<RequestBody>,
     queryParamsSchema: z.Schema<QueryParams>,
     headersSchema: z.Schema<Headers>,
-    responseBodySchema: z.Schema<ResponseBody>,
+    responses: {
+      [statusCode]: z.Schema<Responses>,
+    }
 }
 ```
 
-It is important to note that all the type safety and inference will comme from these definitions. It is important that they are accurate. `RequestBody`, `QueryParams`, `Headers` and `ResponseBody` are directly infered from the zod schemas.
+It is important to note that all the type safety and inference will comme from these definitions. It is important that they are accurate. `RequestBody`, `QueryParams`, `Headers` and `Responses` will be directly infered from the zod schemas.
 
 ### Example
 
@@ -65,7 +67,7 @@ export const bookRoutes = defineRoutes({
       titleContains: z.string().optional(),
       authorContains: z.string().optional(),
     }),
-    responseBodySchema: z.array(bookSchema), // if no schema is provided, the response body will be void
+    responses: { 200: z.array(bookSchema) },
   }),
 
   addBook: defineRoute({
@@ -80,16 +82,16 @@ export const bookRoutes = defineRoutes({
       title: z.string(),
       author: z.string(),
     }),
-    responseBodySchema: z.object({
-      bookId: z.number(),
-    }),
+    responses: { 201: z.object({ bookId: z.number() }) },
   }),
-  
   // you can also define the path params :
   getBookById: defineRoute({
     method: "get",
     url: "/books/:bookId",
-    responseBodySchema: bookSchema.or(z.undefined()),
+    responses: {
+      200: bookSchema,
+      404: z.void(),
+    },
   }),
 });
 ```

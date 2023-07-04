@@ -35,7 +35,14 @@ const testingUsageWithAxios = async () => {
   const getBookByIdResponse = await httpClient.getBookById({
     urlParams: { bookId: "abc" }, // bookId is comming from the name of the path param
   });
-  getBookByIdResponse.body; // type is Book | undefined (matches the responseBodySchema)
-  getBookByIdResponse.status;
+  
+  getBookByIdResponse.status; // type is 200 | 404 (matches the responses)
+
+  if (getBookByIdResponse.status === 404) {
+    getBookByIdResponse.body; // type is void (matches the response -> 404)
+  } else {
+    getBookByIdResponse.status; // type is 200 (matches the response -> 200)
+    getBookByIdResponse.body; // type is Book (matches the response -> 200)
+  }
 };
 ```

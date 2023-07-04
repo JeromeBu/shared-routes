@@ -11,7 +11,6 @@ It uses the `bookRoutes` definitions [from here](../defining-routes.md#example).
 ```typescript
 import supertest from "supertest";
 import { createSupertestSharedClient } from "shared-routes/supertest";
-import { describe, it, expect } from "vitest";
 
 // tiny helper to make sure the types are matching
 const expectToEqual = <T>(actual: T, expected: T) =>

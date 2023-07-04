@@ -31,9 +31,13 @@ const generateOpenApi = createOpenApiGenerator(
 const openApiJSON = generateOpenApi({
   Books: {
     addBook: {
-      // summary: "To add a book",
-      // description: "To add a book",
+      summary: "To add a book",
       extraDocs: {
+        responses: {
+          "201": {
+            description: "The book is successfully added",
+          },
+        },
         body: {
           title: "Book",
           description: "Represents a book",
@@ -45,12 +49,29 @@ const openApiJSON = generateOpenApi({
       },
     },
     getBooks: {
-      // summary: "To get all books",
-      // description: "To get all books",
+      summary: "To get all books",
+      description: "Description : To get all books",
       extraDocs: {
+        responses: {
+          "200": {
+            description: "The books are successfully retrieved",
+          },
+        },
         queryParams: {
           authorContains: { example: "Tolkien" },
           titleContains: { example: "rings" },
+        },
+      },
+    },
+    getBookById: {
+      extraDocs: {
+        responses: {
+          "200": {
+            description: "The book is successfully retrieved",
+          },
+          "404": {
+            description: "The book is not found",
+          },
         },
       },
     },

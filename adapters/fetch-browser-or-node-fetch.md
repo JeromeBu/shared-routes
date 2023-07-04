@@ -13,7 +13,7 @@ It uses the `bookRoutes` definitions [from here](../defining-routes.md#example).
 ```typescript
 import { createFetchSharedClient } from "shared-routes/fetch";
 
-const testingUsage = async () => {
+const testingUsageWithFetch = async () => {
   // the third parameter is optional, it is for options. For now, only the baseURL is supported.
   const httpClient = createFetchSharedClient(bookRoutes, fetch, {
     baseURL: "/api",
@@ -23,6 +23,7 @@ const testingUsage = async () => {
   const getBooksResponse = await httpClient.getBooks({
     queryParams: { titleContains: "Harry potter" }, // type matches the queryParamsSchema
   });
+
   getBooksResponse.body; // type is : Book[] (matches the responseBodySchema)
   getBooksResponse.status;
 
@@ -30,14 +31,22 @@ const testingUsage = async () => {
     body: { title: "Lord Of The Rings", author: "Tolkien" },
     headers: { authorization: "my-token" },
   });
+
   addBookResponse.body; // type is { bookId: number } (matches the responseBodySchema)
   addBookResponse.status;
 
   const getBookByIdResponse = await httpClient.getBookById({
     urlParams: { bookId: "abc" }, // bookId is comming from the name of the path param
   });
-  getBookByIdResponse.body; // type is Book | undefined (matches the responseBodySchema)
-  getBookByIdResponse.status;
+
+  getBookByIdResponse.status; // type is 200 | 404 (matches the responses)
+
+  if (getBookByIdResponse.status === 404) {
+    getBookByIdResponse.body; // type is void (matches the response -> 404)
+  } else {
+    getBookByIdResponse.status; // type is 200 (matches the response -> 200)
+    getBookByIdResponse.body; // type is Book (matches the response -> 200)
+  }
 };
 
 ```

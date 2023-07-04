@@ -16,7 +16,7 @@ import { createExpressSharedRouter } from "shared-routes/express";
 const createRouter = (): express.Router => {
   const expressRouter = express.Router();
 
-  const { expressSharedRouter } = createExpressSharedRouter(
+  const expressSharedRouter = createExpressSharedRouter(
     bookRoutes,
     expressRouter
   );
@@ -39,11 +39,15 @@ const createRouter = (): express.Router => {
   return expressRouter;
 };
 
-const app = express();
-app.use(bodyParser.json());
-app.use(createRouter());
+const createApp = () => {
+  const app = express();
+  app.use(bodyParser.json());
+  app.use(createRouter());
+  return app;
+};
 
-app.listen(3000, () => {
+createApp().listen(3000, () => {
   console.log("server started");
 });
+
 ```
