@@ -6,6 +6,18 @@ description: Generate your documentation directly from your routes
 
 You can take create your openAPI spec from your routes. You can still provide extra documentation, like you would with openAPI. But you get the type safety if the contracts changes.
 
+### ⚠️[ ](#user-content-fn-1)[^1]Careful, a peer dependency is needed : \`zod-to-json-schema\` ⚠️
+
+To generate OpenApi documentation, you need to install the peer dependency : `zod-to-json-schema`
+
+```json
+npm install zod-to-json-schema
+# or
+pnpm install zod-to-json-schema
+# or
+yarn add zod-to-json-schema
+```
+
 ### Example
 
 It uses the `bookRoutes` definitions [from here](../defining-routes.md#example).
@@ -78,3 +90,5 @@ const openApiJSON = generateOpenApi({
   },
 });
 ```
+
+[^1]: 
