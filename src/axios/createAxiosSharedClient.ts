@@ -1,11 +1,19 @@
-import type { AxiosInstance } from "axios";
+import type { AxiosInstance, ResponseType as AxiosResponseType } from "axios";
 import type { UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
+import { ResponseType } from "../defineRoutes";
 import {
   ValidationOptions,
   validateInputParams,
   validateSchemaWithExplictError,
 } from "../validations";
+
+const toAxiosResponseType: Record<ResponseType, AxiosResponseType> = {
+  arrayBuffer: "arraybuffer",
+  blob: "blob",
+  json: "json",
+  text: "text",
+};
 
 export const createAxiosHandlerCreator =
   <SharedRoutes extends Record<string, UnknownSharedRoute>>(
@@ -25,6 +33,7 @@ export const createAxiosHandlerCreator =
       url: replaceParamsInUrl(route.url, urlParams as Url),
       data: body,
       params: queryParams,
+      responseType: toAxiosResponseType[route.responseType],
       headers: {
         ...axios.defaults.headers,
         ...(headers ?? ({} as any)),

@@ -1,7 +1,9 @@
 import type { HttpResponse, UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
+import { ResponseType } from "../defineRoutes";
 import { queryParamsToString } from "./queryParamsToString";
 import type nodeFetch from "node-fetch";
+import type { Response as FetchResponse } from "node-fetch";
 import {
   ValidationOptions,
   validateInputParams,
@@ -11,7 +13,7 @@ import {
 declare function browserFetch(
   input: RequestInfo | URL,
   init?: RequestInit,
-): Promise<Response>;
+): Promise<FetchResponse>;
 
 type Fetch = typeof browserFetch | typeof nodeFetch;
 
@@ -54,20 +56,38 @@ export const createFetchHandlerCreator =
         },
       },
     );
-    const json = await res.json();
+
+    const processedBody = await responseTypeToResponseBody(res, route.responseType);
 
     const responseBody = options.skipResponseValidation
-      ? json
+      ? processedBody
       : validateSchemaWithExplictError({
           adapterName: "fetch",
           checkedSchema: "responses",
           responseStatus: res.status as any,
-          params: json,
+          params: processedBody,
           route,
         });
 
     return { body: responseBody, status: res.status };
   };
+
+const responseTypeToResponseBody = (res: FetchResponse, responseType: ResponseType) => {
+  switch (responseType) {
+    case "json":
+      return res.json();
+    case "text":
+      return res.text();
+    case "blob":
+      return res.blob();
+    case "arrayBuffer":
+      return res.arrayBuffer();
+    default: {
+      const exhaustiveCheck: never = responseType;
+      return exhaustiveCheck;
+    }
+  }
+};
 
 export const createFetchSharedClient = <
   SharedRoutes extends Record<string, UnknownSharedRoute>,

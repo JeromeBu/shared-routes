@@ -25,14 +25,19 @@ export type ResponsesToHttpResponse<Responses extends UnknownResponses> = ValueO
 //   a.body.foo
 // }
 
+// prettier-ignore
+export type ResponseType = 'json' | 'arrayBuffer' | 'blob' | 'text'
+
 type OptionalFields<RequestBody, Query, Responses extends UnknownResponses, Headers> = {
   requestBodySchema?: z.Schema<RequestBody>;
   queryParamsSchema?: z.Schema<Query>;
   responses?: Responses;
   headersSchema?: z.Schema<Headers>;
+  responseType?: ResponseType;
 };
 
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
+
 type MethodAndUrl<U extends Url> = {
   method: HttpMethod;
   url: U;
@@ -83,6 +88,7 @@ export const defineRoute = <
   responses: { 201: z.void() } as any,
   headersSchema: z.object({}) as any,
   ...route,
+  responseType: route.responseType ?? "json",
 });
 
 const verifyRoutesUniqAndListRoutes = <T extends Record<string, UnknownSharedRoute>>(
