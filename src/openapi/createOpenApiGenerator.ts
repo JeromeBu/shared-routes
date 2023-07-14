@@ -66,10 +66,8 @@ type CreateOpenApiGenerator = <
             // prettier-ignore
             headerParams?: z.infer<SharedRoutesByTag[Tag][R]["headersSchema"]> extends void
               ? never
-              : Partial<Record<
-                  keyof z.infer<SharedRoutesByTag[Tag][R]["headersSchema"]>,
-                  Partial<OpenAPI.ParameterObject>
-                >>;
+              : {[K in keyof z.infer<SharedRoutesByTag[Tag][R]["headersSchema"]>]:
+                ExtraDocParameter<z.infer<SharedRoutesByTag[Tag][R]["headersSchema"]>[K]>}
 
             responses: {
               [S in keyof SharedRoutesByTag[Tag][R]["responses"]]: OpenAPI.ResponseObject &

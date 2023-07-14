@@ -49,6 +49,11 @@ const generateOpenApiJSON = () =>
         summary: "To add a book",
         description: "To add a book",
         extraDocs: {
+          headerParams: {
+            authorization: {
+              example: "my-auth-token",
+            },
+          },
           body: {
             title: "my Book",
             description: "Represents a book",
@@ -92,6 +97,7 @@ const generateOpenApiJSON = () =>
               },
             },
           },
+
           responses: {
             "200": {
               description: "Success 200 for getByTitle",
@@ -197,6 +203,7 @@ const expected: OpenAPIV3.Document = {
         parameters: [
           {
             in: "header",
+            example: "my-auth-token",
             name: "authorization",
             required: true,
             schema: {
