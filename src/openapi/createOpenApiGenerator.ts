@@ -1,10 +1,33 @@
 import { OpenAPIV3 as OpenAPI } from "openapi-types";
-import { keys, UnknownSharedRoute } from "..";
-import { z } from "zod";
 import type { ZodFirstPartyTypeKind, ZodRawShape } from "zod";
+import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
+import { keys, PathParameters, UnknownSharedRoute } from "..";
 
-// const emptyDescription = " - ";
+type OmitFromExisting<O, K extends keyof O> = Omit<O, K>;
+
+type Examples<T> = {
+  [media: string]: OpenAPI.ExampleObject & { value?: T };
+};
+
+type WithExampleOrExamples<T> =
+  | { example?: T; examples?: never }
+  | { example?: never; examples?: Examples<T> };
+
+type OpenApiBody<T> = Pick<
+  OpenAPI.BaseSchemaObject,
+  "title" | "description" | "example"
+> & {
+  example?: T;
+};
+
+type ExtraDocParameter<T> = Partial<
+  OmitFromExisting<
+    OpenAPI.ParameterBaseObject,
+    "example" | "examples" | "schema" | "required" | "content"
+  >
+> &
+  WithExampleOrExamples<T>;
 
 type CreateOpenApiGenerator = <
   SharedRoutesByTag extends { [T: string]: Record<string, UnknownSharedRoute> },
@@ -20,29 +43,39 @@ type CreateOpenApiGenerator = <
           OpenAPI.HttpMethods
         > & {
           extraDocs: {
-            body?: OpenAPI.BaseSchemaObject & {
-              properties?: Partial<
-                Record<
-                  keyof z.infer<SharedRoutesByTag[Tag][R]["requestBodySchema"]>,
-                  OpenAPI.BaseSchemaObject
-                >
-              >;
-            };
-            queryParams?: Partial<
-              Record<
-                keyof z.infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]>,
-                Partial<OpenAPI.ParameterObject>
-              >
-            >;
-            headerParams?: Partial<
-              Record<
-                keyof z.infer<SharedRoutesByTag[Tag][R]["headersSchema"]>,
-                Partial<OpenAPI.ParameterObject>
-              >
-            >;
+            urlParams?: PathParameters<SharedRoutesByTag[Tag][R]["url"]> extends Record<
+              string,
+              never
+            >
+              ? never
+              : Record<
+                  keyof PathParameters<SharedRoutesByTag[Tag][R]["url"]>,
+                  ExtraDocParameter<string>
+                >;
+
+            body?: z.infer<SharedRoutesByTag[Tag][R]["requestBodySchema"]> extends void
+              ? never
+              : OpenApiBody<z.infer<SharedRoutesByTag[Tag][R]["requestBodySchema"]>>;
+
+            // prettier-ignore
+            queryParams?: z.infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]> extends void
+              ? never
+              : {
+                [K in keyof z.infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]>]:
+                ExtraDocParameter<z.infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]>[K]>
+              };
+
+            // prettier-ignore
+            headerParams?: z.infer<SharedRoutesByTag[Tag][R]["headersSchema"]> extends void
+              ? never
+              : Partial<Record<
+                  keyof z.infer<SharedRoutesByTag[Tag][R]["headersSchema"]>,
+                  Partial<OpenAPI.ParameterObject>
+                >>;
 
             responses: {
-              [S in keyof SharedRoutesByTag[Tag][R]["responses"]]: OpenAPI.ResponseObject;
+              [S in keyof SharedRoutesByTag[Tag][R]["responses"]]: OpenAPI.ResponseObject &
+                WithExampleOrExamples<z.infer<SharedRoutesByTag[Tag][R]["responses"][S]>>;
             };
           };
         };
@@ -64,7 +97,10 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
           const { extraDocs, ...extraDataForRoute } =
             extraDataByRoute[tag]?.[routeName] ?? {};
 
-          const { formattedUrl, pathParams } = extractFromUrl(route.url);
+          const { formattedUrl, pathParams } = extractFromUrl(
+            route.url,
+            extraDocs?.urlParams,
+          );
 
           const parameters = [
             ...(pathParams.length > 0 ? pathParams : []),
@@ -116,13 +152,18 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
                     | OpenAPI.ArraySchemaObjectType
                     | undefined = (responseSchema as any).type;
 
+                  const { example, examples, ...responseDoc } =
+                    extraDocs?.responses?.[status] ?? {};
+
                   return {
                     ...acc,
                     [status.toString()]: {
-                      ...extraDocs?.responses?.[status],
+                      ...responseDoc,
                       ...(responseSchemaType !== undefined && {
                         content: {
                           "application/json": {
+                            ...(example && { example }),
+                            ...(examples && { examples }),
                             schema: responseSchema,
                           },
                         },
@@ -140,18 +181,23 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
 
 type ParamKind = "path" | "query" | "header";
 
-type Param = {
+type Param<T> = ExtraDocParameter<T> & {
   name: string;
   required: boolean;
   schema: { type: string };
   in: ParamKind;
 };
 
-const extractFromUrl = (url: string): { pathParams: Param[]; formattedUrl: string } => {
-  const pathParams: Param[] = [];
+const extractFromUrl = (
+  url: string,
+  extraUrlParameters?: Record<string, ExtraDocParameter<unknown>>,
+): { pathParams: Param<unknown>[]; formattedUrl: string } => {
+  const pathParams: Param<unknown>[] = [];
 
   const formattedUrl = url.replace(/:(.*?)(\/|$)/g, (_match, group1, group2) => {
+    const extraDocForParam = extraUrlParameters?.[group1];
     pathParams.push({
+      ...extraDocForParam,
       name: group1,
       required: true,
       schema: { type: "string" },
@@ -185,10 +231,10 @@ const zodObjectToParameters = <T>(
   schema: z.Schema<T>,
   paramKind: ParamKind,
   extraDocumentation: Partial<Record<keyof T, Partial<OpenAPI.ParameterObject>>> = {},
-): Param[] => {
+): Param<unknown>[] => {
   const shape = getShape(schema);
 
-  return Object.keys(shape).reduce((acc, paramName): Param[] => {
+  return Object.keys(shape).reduce((acc, paramName): Param<unknown>[] => {
     const paramSchema = shape[paramName];
     const extraDoc = extraDocumentation[paramName as keyof T];
     const initialTypeName = getTypeName(paramSchema);
@@ -201,14 +247,14 @@ const zodObjectToParameters = <T>(
     return [
       ...acc,
       {
-        ...extraDoc,
+        ...(extraDoc as any),
         in: paramKind,
         name: paramName,
         required,
         schema,
       },
     ];
-  }, [] as Param[]);
+  }, [] as Param<unknown>[]);
 };
 
 const getTypeName = <T>(schema: z.Schema<T>): ZodFirstPartyTypeKind | undefined =>

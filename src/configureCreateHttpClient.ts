@@ -13,8 +13,8 @@ import {
   Url,
 } from "./pathParameters";
 
-type AnyObj = Record<string, unknown>;
 type EmptyObj = Record<string, never>;
+type AnyObj = Record<string, unknown>;
 
 export type HttpResponse<Status extends number, ResponseBody> = {
   status: Status;

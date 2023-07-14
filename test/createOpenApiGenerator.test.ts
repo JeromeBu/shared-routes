@@ -49,11 +49,11 @@ const openApiJSON = generateOpenApi({
       description: "To add a book",
       extraDocs: {
         body: {
-          title: "Book",
+          title: "my Book",
           description: "Represents a book",
-          properties: {
-            title: { example: "Harry Potter" },
-            author: { example: "JK Rowlings" },
+          example: {
+            title: "Harry Potter (addBook body)",
+            author: "JK Rowlings (addBook body)",
           },
         },
         responses: {
@@ -65,9 +65,39 @@ const openApiJSON = generateOpenApi({
     },
     getByTitle: {
       extraDocs: {
+        urlParams: {
+          title: {
+            description: "The title of the book",
+            examples: {
+              harry: {
+                summary: "Harry Potter summary (getByTitle param)",
+                description: "Harry Potter description (getByTitle param)",
+                value: "harry-potter",
+              },
+            },
+          },
+        },
         responses: {
           "200": {
             description: "Success 200 for getByTitle",
+            examples: {
+              harry: {
+                summary: "Harry Potter summary (getByTitle 200)",
+                description: "Harry Potter description (getByTitle 200)",
+                value: {
+                  title: "Harry Potter (getByTitle 200)",
+                  author: "JK Rowlings (getByTitle 200)",
+                },
+              },
+              lordOfRing: {
+                summary: "Lord of the ring summary (getByTitle 200)",
+                description: "Lord of the ring description (getByTitle 200)",
+                value: {
+                  title: "Lord of the ring 2",
+                  author: "Tolkien 2",
+                },
+              },
+            },
           },
         },
       },
@@ -77,8 +107,12 @@ const openApiJSON = generateOpenApi({
       description: "To get all books",
       extraDocs: {
         queryParams: {
-          max: { example: 15 },
-          truc: { example: "machin..." },
+          max: {
+            description: "Le maximum à retourner",
+            example: 15,
+            allowEmptyValue: true,
+          },
+          truc: { deprecated: true, example: "machin..." },
         },
         responses: {
           200: {
@@ -108,6 +142,14 @@ const expected: OpenAPIV3.Document = {
         tags: ["Books"],
         parameters: [
           {
+            description: "The title of the book",
+            examples: {
+              harry: {
+                summary: "Harry Potter summary (getByTitle param)",
+                description: "Harry Potter description (getByTitle param)",
+                value: "harry-potter",
+              },
+            },
             name: "title",
             required: true,
             schema: { type: "string" },
@@ -120,6 +162,24 @@ const expected: OpenAPIV3.Document = {
             content: {
               "application/json": {
                 schema: bookJsonSchema,
+                examples: {
+                  harry: {
+                    summary: "Harry Potter summary (getByTitle 200)",
+                    description: "Harry Potter description (getByTitle 200)",
+                    value: {
+                      title: "Harry Potter (getByTitle 200)",
+                      author: "JK Rowlings (getByTitle 200)",
+                    },
+                  },
+                  lordOfRing: {
+                    summary: "Lord of the ring summary (getByTitle 200)",
+                    description: "Lord of the ring description (getByTitle 200)",
+                    value: {
+                      title: "Lord of the ring 2",
+                      author: "Tolkien 2",
+                    },
+                  },
+                },
               },
             },
           },
@@ -133,6 +193,8 @@ const expected: OpenAPIV3.Document = {
         tags: ["Books"],
         parameters: [
           {
+            allowEmptyValue: true,
+            description: "Le maximum à retourner",
             example: 15,
             name: "max",
             required: false,
@@ -141,6 +203,7 @@ const expected: OpenAPIV3.Document = {
           },
           {
             example: "machin...",
+            deprecated: true,
             in: "query",
             name: "truc",
             required: true,
@@ -179,7 +242,11 @@ const expected: OpenAPIV3.Document = {
           content: {
             "application/json": {
               schema: {
-                title: "Book",
+                example: {
+                  title: "Harry Potter (addBook body)",
+                  author: "JK Rowlings (addBook body)",
+                },
+                title: "my Book",
                 description: "Represents a book",
                 ...bookJsonSchema,
               },
@@ -198,5 +265,7 @@ const expected: OpenAPIV3.Document = {
 };
 
 it("has the expected shape", () => {
+  console.log("--- SPEC ---");
+  console.log(JSON.stringify(openApiJSON, null, 2));
   expect(openApiJSON).toEqual(expected);
 });
