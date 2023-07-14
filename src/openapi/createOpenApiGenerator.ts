@@ -1,4 +1,4 @@
-import { OpenAPIV3 as OpenAPI } from "openapi-types";
+import { OpenAPIV3_1 as OpenAPI } from "openapi-types";
 import type { ZodFirstPartyTypeKind, ZodRawShape } from "zod";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -14,11 +14,9 @@ type WithExampleOrExamples<T> =
   | { example?: T; examples?: never }
   | { example?: never; examples?: Examples<T> };
 
-type OpenApiBody<T> = Pick<
-  OpenAPI.BaseSchemaObject,
-  "title" | "description" | "example"
-> & {
+type OpenApiBody<T> = Pick<OpenAPI.BaseSchemaObject, "title" | "description"> & {
   example?: T;
+  examples?: Examples<T>;
 };
 
 type ExtraDocParameter<T> = Partial<
@@ -84,6 +82,23 @@ type CreateOpenApiGenerator = <
   >,
 ) => OpenAPI.Document;
 
+const extractFromOpenApiBody = (
+  openApiRequestBody: Record<string, any> | undefined = {},
+): {
+  withRequestBodyExemple: WithExampleOrExamples<unknown>;
+  requestBodyDocs: Record<string, unknown>;
+} => {
+  const { examples, example, ...rest } = openApiRequestBody;
+
+  return {
+    withRequestBodyExemple: {
+      ...(example && { example }),
+      ...(examples && { examples }),
+    },
+    requestBodyDocs: rest,
+  };
+};
+
 export const createOpenApiGenerator: CreateOpenApiGenerator =
   (sharedRoutesByTag, openApiRootDoc) => (extraDataByRoute) => ({
     ...openApiRootDoc,
@@ -120,6 +135,10 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
               : []),
           ];
 
+          const { withRequestBodyExemple, requestBodyDocs } = extractFromOpenApiBody(
+            extraDocs?.body,
+          );
+
           return {
             ...acc,
             [formattedUrl]: {
@@ -136,8 +155,9 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
                     required: true,
                     content: {
                       "application/json": {
+                        ...withRequestBodyExemple,
                         schema: {
-                          ...extraDocs?.body,
+                          ...requestBodyDocs,
                           ...zodToOpenApi(route.requestBodySchema),
                         },
                       },

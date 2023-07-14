@@ -37,92 +37,107 @@ const rootInfo = {
     version: "1",
   },
   servers: [{ url: "/api" }],
-  openapi: "3.0.0",
+  openapi: "3.1.0",
 };
 
 const generateOpenApi = createOpenApiGenerator({ Books: routes }, rootInfo);
 
-const openApiJSON = generateOpenApi({
-  Books: {
-    addBook: {
-      summary: "To add a book",
-      description: "To add a book",
-      extraDocs: {
-        body: {
-          title: "my Book",
-          description: "Represents a book",
-          example: {
-            title: "Harry Potter (addBook body)",
-            author: "JK Rowlings (addBook body)",
-          },
-        },
-        responses: {
-          201: {
-            description: "Success 201 for addBook. Returns void",
-          },
-        },
-      },
-    },
-    getByTitle: {
-      extraDocs: {
-        urlParams: {
-          title: {
-            description: "The title of the book",
+const generateOpenApiJSON = () =>
+  generateOpenApi({
+    Books: {
+      addBook: {
+        summary: "To add a book",
+        description: "To add a book",
+        extraDocs: {
+          body: {
+            title: "my Book",
+            description: "Represents a book",
             examples: {
               harry: {
                 summary: "Harry Potter summary (getByTitle param)",
                 description: "Harry Potter description (getByTitle param)",
-                value: "harry-potter",
+                value: {
+                  title: "Harry Potter (addBook body)",
+                  author: "JK Rowlings (addBook body)",
+                },
+              },
+              miserables: {
+                summary: "Miserables summary (getByTitle param)",
+                description: "Miserables description (getByTitle param)",
+                value: {
+                  title: "Les miserables (addBook body)",
+                  author: "Victor Hugo (addBook body)",
+                },
               },
             },
           },
+          responses: {
+            201: {
+              description: "Success 201 for addBook. Returns void",
+            },
+          },
         },
-        responses: {
-          "200": {
-            description: "Success 200 for getByTitle",
-            examples: {
-              harry: {
-                summary: "Harry Potter summary (getByTitle 200)",
-                description: "Harry Potter description (getByTitle 200)",
-                value: {
-                  title: "Harry Potter (getByTitle 200)",
-                  author: "JK Rowlings (getByTitle 200)",
+      },
+      getByTitle: {
+        extraDocs: {
+          urlParams: {
+            title: {
+              description: "The title of the book",
+              examples: {
+                harry: {
+                  summary: "Harry Potter summary (getByTitle param)",
+                  description: "Harry Potter description (getByTitle param)",
+                  value: "harry-potter",
                 },
               },
-              lordOfRing: {
-                summary: "Lord of the ring summary (getByTitle 200)",
-                description: "Lord of the ring description (getByTitle 200)",
-                value: {
-                  title: "Lord of the ring 2",
-                  author: "Tolkien 2",
+            },
+          },
+          responses: {
+            "200": {
+              description: "Success 200 for getByTitle",
+              examples: {
+                harry: {
+                  summary: "Harry Potter summary (getByTitle 200)",
+                  description: "Harry Potter description (getByTitle 200)",
+                  value: {
+                    title: "Harry Potter (getByTitle 200)",
+                    author: "JK Rowlings (getByTitle 200)",
+                  },
+                },
+                lordOfRing: {
+                  summary: "Lord of the ring summary (getByTitle 200)",
+                  description: "Lord of the ring description (getByTitle 200)",
+                  value: {
+                    title: "Lord of the ring (getByTitle 200)",
+                    author: "Tolkien (getByTitle 200)",
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-    getAllBooks: {
-      summary: "To get all books",
-      description: "To get all books",
-      extraDocs: {
-        queryParams: {
-          max: {
-            description: "Le maximum à retourner",
-            example: 15,
-            allowEmptyValue: true,
+      getAllBooks: {
+        summary: "To get all books",
+        description: "To get all books",
+        extraDocs: {
+          queryParams: {
+            max: {
+              description: "Le maximum à retourner",
+              example: 15,
+              allowEmptyValue: true,
+            },
+            truc: { deprecated: true, example: "machin..." },
           },
-          truc: { deprecated: true, example: "machin..." },
-        },
-        responses: {
-          200: {
-            description: "Success 200 for getAllBooks",
+          responses: {
+            200: {
+              description: "Success 200 for getAllBooks",
+            },
           },
         },
       },
     },
-  },
-});
+  });
 
 const bookJsonSchema = {
   additionalProperties: false,
@@ -137,55 +152,6 @@ const bookJsonSchema = {
 const expected: OpenAPIV3.Document = {
   ...rootInfo,
   paths: {
-    "/books/{title}": {
-      get: {
-        tags: ["Books"],
-        parameters: [
-          {
-            description: "The title of the book",
-            examples: {
-              harry: {
-                summary: "Harry Potter summary (getByTitle param)",
-                description: "Harry Potter description (getByTitle param)",
-                value: "harry-potter",
-              },
-            },
-            name: "title",
-            required: true,
-            schema: { type: "string" },
-            in: "path",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "Success 200 for getByTitle",
-            content: {
-              "application/json": {
-                schema: bookJsonSchema,
-                examples: {
-                  harry: {
-                    summary: "Harry Potter summary (getByTitle 200)",
-                    description: "Harry Potter description (getByTitle 200)",
-                    value: {
-                      title: "Harry Potter (getByTitle 200)",
-                      author: "JK Rowlings (getByTitle 200)",
-                    },
-                  },
-                  lordOfRing: {
-                    summary: "Lord of the ring summary (getByTitle 200)",
-                    description: "Lord of the ring description (getByTitle 200)",
-                    value: {
-                      title: "Lord of the ring 2",
-                      author: "Tolkien 2",
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
     "/books": {
       get: {
         summary: "To get all books",
@@ -241,11 +207,25 @@ const expected: OpenAPIV3.Document = {
         requestBody: {
           content: {
             "application/json": {
-              schema: {
-                example: {
-                  title: "Harry Potter (addBook body)",
-                  author: "JK Rowlings (addBook body)",
+              examples: {
+                harry: {
+                  summary: "Harry Potter summary (getByTitle param)",
+                  description: "Harry Potter description (getByTitle param)",
+                  value: {
+                    title: "Harry Potter (addBook body)",
+                    author: "JK Rowlings (addBook body)",
+                  },
                 },
+                miserables: {
+                  summary: "Miserables summary (getByTitle param)",
+                  description: "Miserables description (getByTitle param)",
+                  value: {
+                    title: "Les miserables (addBook body)",
+                    author: "Victor Hugo (addBook body)",
+                  },
+                },
+              },
+              schema: {
                 title: "my Book",
                 description: "Represents a book",
                 ...bookJsonSchema,
@@ -261,11 +241,62 @@ const expected: OpenAPIV3.Document = {
         },
       },
     },
+    "/books/{title}": {
+      get: {
+        tags: ["Books"],
+        parameters: [
+          {
+            description: "The title of the book",
+            examples: {
+              harry: {
+                summary: "Harry Potter summary (getByTitle param)",
+                description: "Harry Potter description (getByTitle param)",
+                value: "harry-potter",
+              },
+            },
+            name: "title",
+            required: true,
+            schema: { type: "string" },
+            in: "path",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Success 200 for getByTitle",
+            content: {
+              "application/json": {
+                schema: bookJsonSchema,
+                examples: {
+                  harry: {
+                    summary: "Harry Potter summary (getByTitle 200)",
+                    description: "Harry Potter description (getByTitle 200)",
+                    value: {
+                      title: "Harry Potter (getByTitle 200)",
+                      author: "JK Rowlings (getByTitle 200)",
+                    },
+                  },
+                  lordOfRing: {
+                    summary: "Lord of the ring summary (getByTitle 200)",
+                    description: "Lord of the ring description (getByTitle 200)",
+                    value: {
+                      title: "Lord of the ring (getByTitle 200)",
+                      author: "Tolkien (getByTitle 200)",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   },
 };
 
 it("has the expected shape", () => {
-  console.log("--- SPEC ---");
-  console.log(JSON.stringify(openApiJSON, null, 2));
+  const openApiJSON = generateOpenApiJSON();
+  // console.log("--- Actual SPEC ---");
+  // console.log(JSON.stringify(openApiJSON, null, 2));
+
   expect(openApiJSON).toEqual(expected);
 });
