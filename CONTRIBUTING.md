@@ -34,7 +34,12 @@ This will create a symlink to the shared-routes library dist in your app's `node
 
 ### 5. When your are done testing, you can unlink the library (from app directory) by running :
 ```sh
-pnpm unlink
+pnpm unlink # I wish it was so easy
+
+# Actually unlinking did not work correctly for me. So I had to reinstall the library with :
+pnpm install shared-routes@library
+# Hopefully I will find a better way to do this
+ 
 ```
 
 ## Releasing
