@@ -231,7 +231,9 @@ const extractFromUrl = (
 };
 
 const zodToOpenApi = (schema: Parameters<typeof zodToJsonSchema>[0]) => {
-  const { $schema, ...rest } = zodToJsonSchema(schema, { $refStrategy: "none" });
+  const { $schema, additionalProperties, ...rest } = zodToJsonSchema(schema, {
+    $refStrategy: "none",
+  }) as any;
   return rest;
 };
 

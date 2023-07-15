@@ -20,7 +20,7 @@ const routes = defineRoutes({
   getByTitle: defineRoute({
     url: "/books/:title",
     method: "get",
-    responses: { 200: bookSchema },
+    responses: { 200: bookSchema, 404: z.object({ message: z.string() }) },
   }),
   addBook: defineRoute({
     url: "/books",
@@ -119,6 +119,9 @@ const generateOpenApiJSON = () =>
                   },
                 },
               },
+            },
+            404: {
+              description: "Not found 404 for getByTitle",
             },
           },
         },
@@ -236,6 +239,7 @@ const expected: OpenAPIV3.Document = {
                 title: "my Book",
                 description: "Represents a book",
                 ...bookJsonSchema,
+                additionalProperties: undefined,
               },
             },
           },
@@ -268,11 +272,25 @@ const expected: OpenAPIV3.Document = {
           },
         ],
         responses: {
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": { type: "string" },
+                  },
+                  "required": ["message"],
+                  "type": "object",
+                },
+              },
+            },
+            "description": "Not found 404 for getByTitle",
+          },
           "200": {
             description: "Success 200 for getByTitle",
             content: {
               "application/json": {
-                schema: bookJsonSchema,
+                schema: { ...bookJsonSchema, additionalProperties: undefined },
                 examples: {
                   harry: {
                     summary: "Harry Potter summary (getByTitle 200)",
