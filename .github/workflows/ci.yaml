@@ -18,23 +18,31 @@ jobs:
     name: Test with Node v${{ matrix.node }} on ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
+    - uses: pnpm/action-setup@v2
+      with:
+        version: 8
     - uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node }}
-    - uses: bahmutov/npm-install@v1
-    - run: yarn build
+        cache: 'pnpm'
+    - run: pnpm install --frozen-lockfile
+    - run: pnpm build
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
-    - run: yarn test
+    - run: pnpm test
 
   test_deno:
     runs-on: ubuntu-latest
     name: test with Deno
     steps: 
     - uses: actions/checkout@v3
+    - uses: pnpm/action-setup@v2
+      with:
+        version: 8
     - uses: actions/setup-node@v3
       with:
         node-version: '18'
+        cache: 'pnpm'
     - name: Cache
       uses: actions/cache@v3
       with:
@@ -48,8 +56,8 @@ jobs:
       with:
         deno-version: v1.x
     - run: deno --version
-    - uses: bahmutov/npm-install@v1
-    - run: yarn build
+    - run: pnpm install --frozen-lockfile
+    - run: pnpm build
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
     - run: deno run --unstable --reload --allow-read --allow-env --allow-net deno_dist/mod.ts
@@ -95,6 +103,9 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.ref }}
+    - uses: pnpm/action-setup@v2
+      with:
+        version: 8
     - run: rm -r .github
     - name: Remove tmp_branch if it exists
       run: git push origin :tmp_branch || true
@@ -102,8 +113,9 @@ jobs:
     - uses: actions/setup-node@v3
       with:
         registry-url: https://registry.npmjs.org/
-    - uses: bahmutov/npm-install@v1
-    - run: yarn build
+        cache: 'pnpm'
+    - run: pnpm install --frozen-lockfile
+    - run: pnpm build
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
     - run: |
