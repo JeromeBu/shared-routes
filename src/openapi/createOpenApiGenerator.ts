@@ -38,7 +38,7 @@ type CreateOpenApiGenerator = <
       [Tag in keyof SharedRoutesByTag]: {
         [R in keyof SharedRoutesByTag[Tag]]: Omit<
           OpenAPI.PathItemObject,
-          OpenAPI.HttpMethods
+          OpenAPI.HttpMethods | "parameters"
         > & {
           extraDocs: {
             urlParams?: PathParameters<SharedRoutesByTag[Tag][R]["url"]> extends Record<
