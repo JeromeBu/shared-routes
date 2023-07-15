@@ -1,4 +1,4 @@
-import { OpenAPIV3 } from "openapi-types";
+import { OpenAPIV3_1 } from "openapi-types";
 import { defineRoute, defineRoutes } from "../src";
 import { z } from "zod";
 import { createOpenApiGenerator } from "../src/openapi";
@@ -38,6 +38,16 @@ const rootInfo = {
   },
   servers: [{ url: "/api" }],
   openapi: "3.1.0",
+  components: {
+    securitySchemes: {
+      apiKeyAuth: {
+        description: "The API key to access this API",
+        type: "apiKey" as const,
+        in: "header",
+        name: "authorization",
+      },
+    },
+  },
 };
 
 const generateOpenApi = createOpenApiGenerator({ Books: routes }, rootInfo);
@@ -49,6 +59,7 @@ const generateOpenApiJSON = () =>
         summary: "To add a book",
         description: "To add a book",
         extraDocs: {
+          securitySchemeToApply: ["apiKeyAuth"],
           headerParams: {
             authorization: {
               example: "my-auth-token",
@@ -158,7 +169,7 @@ const bookJsonSchema = {
   required: ["title", "author"],
 };
 
-const expected: OpenAPIV3.Document = {
+const expected: OpenAPIV3_1.Document = {
   ...rootInfo,
   paths: {
     "/books": {
@@ -203,6 +214,7 @@ const expected: OpenAPIV3.Document = {
         summary: "To add a book",
         description: "To add a book",
         tags: ["Books"],
+        security: [{ apiKeyAuth: [] }],
         parameters: [
           {
             in: "header",
