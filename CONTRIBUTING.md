@@ -1,53 +1,41 @@
 # Contributing
 
+## Process
+
+### If you want to add functionality, signal or fix a bug :
+
+1. Create an issue explaining what you want to do or what is wrong.
+2. You than can create a pull request with your changes, and link the issue to it. 
+
 ## Testing your changes in an external app
 
 You have made some changes to the code and you want to test them
-in your app before submitting a pull request?
+in your app before submitting a pull request ?
 
-### With pnpm
+### 1.The project is build with pnpm, so you will need it
 
-You can edit the `package.json` in your app, and use link to point to your local version of the library
-
-```json
-{
-    ...
-    "shared-routes": "link:../../../shared-routes",
-    ...
-}
+### 2. On your local machine, go to the `shared-routes` directory (where you cloned the project) and run :
+```sh
+pnpm make-lib-linkable
 ```
+This will build the library and make it linkable (we need create and edit a package.json: This is required because of: https://github.com/garronej/ts-ci/blob/c0e207b9677523d4ec97fe672ddd72ccbb3c1cc4/README.md?plain=1#L54-L58).
 
-### With yarn
-
-Assuming `you/my-app` have `shared-routes` as a dependency.
-
-```bash
-cd ~/github
-git clone https://github.com/you/my-app
-cd my-app
-yarn
-
-cd ~/github
-git clone https://github.com/JeromeBu/shared-routes
-cd shared-routes
-yarn
-yarn build
-yarn link-in-app my-app
-npx tsc -w
-
-# Open another terminal
-
-cd ~/github/my-app
-rm -rf node_modules/.cache
-yarn start # Or whatever my-app is using for starting the project
+### 3. If you want automatic updates of the library in your app, you can run (still in the lib directory) :
+```sh
+pnpm watch
 ```
+It will run the build with `tsc` in watch mode (for 'esm' and 'cjs')
 
-You don't have to use `~/github` as reference path. Just make sure `my-app` and `shared-routes`
-are in the same directory.
+### 4. Go to your app directory (the app consuming `shared-routes`) and run :
+```sh
+pnpm link ../path-to-shared-routes-lib/dist
+```
+This will create a symlink to the shared-routes library dist in your app's `node_modules` directory.
 
-> Note for the maintainer: You might run into issues if you do not list all your singleton dependencies in
-> `src/link-in-app.js -> singletonDependencies`. A singleton dependency is a dependency that can
-> only be present once in an App. Singleton dependencies are usually listed as peerDependencies example `react`, `@emotion/*`.
+### 5. When your are done testing, you can unlink the library (from app directory) by running :
+```sh
+pnpm unlink
+```
 
 ## Releasing
 
