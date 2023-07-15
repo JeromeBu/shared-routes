@@ -29,18 +29,24 @@ type ExtraDocParameter<T> = Partial<
 
 type CreateOpenApiGenerator = <
   SharedRoutesByTag extends { [T: string]: Record<string, UnknownSharedRoute> },
+  SecuritySchemeName extends string,
 >(
   sharedRoutesByTag: SharedRoutesByTag,
-  openApiRootDoc: Omit<OpenAPI.Document, "paths">,
+  openApiRootDoc: Omit<OpenAPI.Document, "paths" | "components"> & {
+    components?: OmitFromExisting<OpenAPI.ComponentsObject, "securitySchemes"> & {
+      securitySchemes?: Record<SecuritySchemeName, OpenAPI.SecuritySchemeObject>;
+    };
+  },
 ) => (
   extraDataByRoute: Partial<
     {
       [Tag in keyof SharedRoutesByTag]: {
-        [R in keyof SharedRoutesByTag[Tag]]: Omit<
-          OpenAPI.PathItemObject,
-          OpenAPI.HttpMethods | "parameters"
+        [R in keyof SharedRoutesByTag[Tag]]: OmitFromExisting<
+          OpenAPI.OperationObject,
+          "parameters" | "responses" | "requestBody"
         > & {
           extraDocs: {
+            securitySchemeToApply?: SecuritySchemeName[];
             urlParams?: PathParameters<SharedRoutesByTag[Tag][R]["url"]> extends Record<
               string,
               never
@@ -144,6 +150,15 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
               [route.method]: {
                 ...extraDataForRoute,
                 tags: [tag],
+                ...(extraDocs?.securitySchemeToApply && {
+                  security: extraDocs.securitySchemeToApply.reduce(
+                    (securityAcc, securitySchemeName) => [
+                      ...securityAcc,
+                      { [securitySchemeName]: [] },
+                    ],
+                    [] as Record<string, string[]>[],
+                  ),
+                }),
                 ...(parameters.length > 0 && {
                   parameters,
                 }),
