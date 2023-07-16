@@ -28,39 +28,39 @@ jobs:
     - run: pnpm install --frozen-lockfile
     - run: pnpm build
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - run: pnpm test
 
-#  test_deno:
-#    runs-on: ubuntu-latest
-#    name: test with Deno
-#    steps:
-#    - uses: actions/checkout@v3
-#    - uses: pnpm/action-setup@v2
-#      with:
-#        version: 8
-#    - uses: actions/setup-node@v3
-#      with:
-#        node-version: '18'
-#        cache: 'pnpm'
-#    - name: Cache
-#      uses: actions/cache@v3
-#      with:
-#        path: ~/.cache/deno
-#        key: deno-${{ runner.os }}-${{ hashFiles('deno-lock.json') }}
-#        restore-keys: |
-#           deno-${{ runner.os }}-${{ hashFiles('deno-lock.json') }}
-#           deno-${{ runner.os }}-
-#           deno-
-#    - uses: denoland/setup-deno@v1
-#      with:
-#        deno-version: v1.x
-#    - run: deno --version
-#    - run: pnpm install --frozen-lockfile
-#    - run: pnpm build
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#    - run: deno run --unstable --reload --allow-read --allow-env --allow-net deno_dist/mod.ts
+  test_deno:
+    runs-on: ubuntu-latest
+    name: test with Deno
+    steps:
+    - uses: actions/checkout@v3
+    - uses: pnpm/action-setup@v2
+      with:
+        version: 8
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'pnpm'
+    - name: Cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/deno
+        key: deno-${{ runner.os }}-${{ hashFiles('deno-lock.json') }}
+        restore-keys: |
+           deno-${{ runner.os }}-${{ hashFiles('deno-lock.json') }}
+           deno-${{ runner.os }}-
+           deno-
+    - uses: denoland/setup-deno@v1
+      with:
+        deno-version: v1.x
+    - run: deno --version
+    - run: pnpm install --frozen-lockfile
+    - run: pnpm build:deno
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - run: deno run --unstable --reload --allow-read --allow-env --allow-net deno_dist/mod.ts
 
   check_if_version_upgraded:
     name: Check if version upgrade
