@@ -43,7 +43,7 @@ type CreateOpenApiGenerator = <
       [Tag in keyof SharedRoutesByTag]: {
         [R in keyof SharedRoutesByTag[Tag]]: OmitFromExisting<
           OpenAPI.OperationObject,
-          "parameters" | "responses" | "requestBody"
+          "parameters" | "responses" | "requestBody" | "security"
         > & {
           extraDocs: {
             securitySchemeToApply?: SecuritySchemeName[];
