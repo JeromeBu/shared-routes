@@ -45,7 +45,7 @@ devDependencies:
     specifier: ^4.18.2
     version: 4.18.2
   husky:
-    specifier: ^8.0.3
+    specifier: ^8.0.0
     version: 8.0.3
   js2mjs:
     specifier: ^0.3.0
