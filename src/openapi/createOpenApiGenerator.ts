@@ -150,15 +150,8 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
               [route.method]: {
                 ...extraDataForRoute,
                 tags: [tag],
-                ...(extraDocs?.securitySchemeToApply && {
-                  security: extraDocs.securitySchemeToApply.reduce(
-                    (securityAcc, securitySchemeName) => [
-                      ...securityAcc,
-                      { [securitySchemeName]: [] },
-                    ],
-                    [] as Record<string, string[]>[],
-                  ),
-                }),
+                ...(extraDocs?.securitySchemeToApply &&
+                  securitySchemeNamesToSecurity(extraDocs.securitySchemeToApply)),
                 ...(parameters.length > 0 && {
                   parameters,
                 }),
@@ -294,5 +287,12 @@ const zodObjectToParameters = <T>(
 
 const getTypeName = <T>(schema: z.Schema<T>): ZodFirstPartyTypeKind | undefined =>
   (schema._def as any).typeName;
+
+const securitySchemeNamesToSecurity = (securitySchemeToApply: string[]) => ({
+  security: securitySchemeToApply.reduce(
+    (securityAcc, securitySchemeName) => [...securityAcc, { [securitySchemeName]: [] }],
+    [] as Record<string, string[]>[],
+  ),
+});
 
 const getShape = <T>(schema: z.Schema<T>): ZodRawShape => (schema._def as any).shape();

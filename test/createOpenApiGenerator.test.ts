@@ -48,7 +48,7 @@ const rootInfo = {
       },
     },
   },
-};
+} satisfies Parameters<typeof createOpenApiGenerator>[1];
 
 const generateOpenApi = createOpenApiGenerator({ Books: routes }, rootInfo);
 
