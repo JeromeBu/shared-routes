@@ -19,7 +19,8 @@
     "_format": "prettier '**/*.{ts,tsx,json,md}'",
     "format": "npm run _format -- --write",
     "format:check": "npm run _format -- --list-different",
-    "make-lib-linkable": "pnpm build:cjs && pnpm build:esm && ts-node --skipProject scripts/make-dist-linkable.ts"
+    "make-lib-linkable": "pnpm build:cjs && pnpm build:esm && ts-node --skipProject scripts/make-dist-linkable.ts",
+    "prepare": "husky install"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -61,7 +62,7 @@
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "express": "^4.18.2",
-    "husky": "^4.3.8",
+    "husky": "^8.0.0",
     "js2mjs": "^0.3.0",
     "lint-staged": "^11.1.1",
     "node-fetch": "^3.3.1",
