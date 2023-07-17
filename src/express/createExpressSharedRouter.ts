@@ -26,6 +26,7 @@ const makeValidationMiddleware =
       const zodError = error.cause as ZodError;
       res.status(400);
       res.json({
+        status: 400,
         message: error.message,
         issues: zodError.issues.map(
           ({ message, path }) => `${path.join(".")} : ${message}`,
