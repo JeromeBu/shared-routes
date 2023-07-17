@@ -127,6 +127,7 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
       queryParams: { max: "yolo" as any },
     });
     expect(getAllBooksResponse.body).toEqual({
+      status: 400,
       message:
         "Shared-route schema 'queryParamsSchema' was not respected in adapter 'express'.\nRoute: GET /books",
       issues: ["max : Expected number, received string"],
