@@ -13,11 +13,14 @@ fs.writeFileSync(
           fs.readFileSync(pathJoin(rootDirPath, "package.json")).toString("utf8"),
         );
 
+        const { prepare, ...scripts } = packageJsonParsed["scripts"];
+
         return {
           ...packageJsonParsed,
           "main": packageJsonParsed["main"]?.replace(/^dist\//, ""),
           "types": packageJsonParsed["types"]?.replace(/^dist\//, ""),
           "module": packageJsonParsed["module"]?.replace(/^dist\//, ""),
+          "scripts": scripts,
           "exports": Object.fromEntries(
             Object.entries(packageJsonParsed["exports"]).map(([path, obj]) => [
               path,
