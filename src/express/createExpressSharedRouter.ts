@@ -25,7 +25,6 @@ const makeValidationMiddleware =
     } catch (error: any) {
       const zodError = error.cause as ZodError;
       res.status(400);
-      console.log("ISSUES : ", zodError.issues);
       res.json({
         status: 400,
         message: error.message,
