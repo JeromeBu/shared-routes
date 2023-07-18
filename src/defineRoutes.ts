@@ -85,7 +85,7 @@ export const defineRoute = <
 ): SharedRoute<U, RequestBody, Query, Responses, Headers> => ({
   requestBodySchema: z.object({}).strict() as any,
   queryParamsSchema: z.object({}).strict() as any,
-  responses: { 201: z.void() } as any,
+  responses: { 201: z.void().or(z.string().max(0)) } as any, // as some framework return "" instead of void (like express)
   headersSchema: z.object({}) as any,
   ...route,
   responseType: route.responseType ?? "json",
