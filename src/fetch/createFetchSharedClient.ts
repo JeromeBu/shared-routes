@@ -7,7 +7,7 @@ import type { Response as FetchResponse } from "node-fetch";
 import {
   ValidationOptions,
   validateInputParams,
-  validateSchemaWithExplictError,
+  validateSchemaWithExplicitError,
 } from "../validations";
 
 declare function browserFetch(
@@ -30,7 +30,7 @@ export const createFetchHandlerCreator =
 
     const { body, headers, queryParams } = options.skipInputValidation
       ? params
-      : validateInputParams(route, params as any, "fetch");
+      : validateInputParams(route, params as any, "fetch", { withIssuesInMessage: true });
 
     const bodyAsString = JSON.stringify(body);
 
@@ -61,12 +61,13 @@ export const createFetchHandlerCreator =
 
     const responseBody = options.skipResponseValidation
       ? processedBody
-      : validateSchemaWithExplictError({
+      : validateSchemaWithExplicitError({
           adapterName: "fetch",
           checkedSchema: "responses",
           responseStatus: res.status as any,
           params: processedBody,
           route,
+          withIssuesInMessage: true,
         });
 
     return { body: responseBody, status: res.status };

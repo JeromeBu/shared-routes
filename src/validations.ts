@@ -1,5 +1,6 @@
-import { HandlerParams } from "./configureCreateHttpClient";
-import { UnknownSharedRoute } from "./defineRoutes";
+import type { ZodIssue } from "zod";
+import type { HandlerParams } from "./configureCreateHttpClient";
+import type { UnknownSharedRoute } from "./defineRoutes";
 
 export type ValidationOptions = {
   /* if true, will not validate request body, query params nor headers */
@@ -20,11 +21,13 @@ const explicitError = ({
   adapterName,
   checkedSchema,
   statusCode,
+  withIssuesInMessage,
 }: {
   route: UnknownSharedRoute;
   error: unknown;
   adapterName: string;
   checkedSchema: CheckedSchema;
+  withIssuesInMessage: boolean;
   statusCode?: number;
 }): Error => {
   const newError = new Error(
@@ -35,6 +38,9 @@ const explicitError = ({
           route.responses,
         ).join(", ")}.`,
       `Route: ${route.method.toUpperCase()} ${route.url}`,
+      ...(withIssuesInMessage && (error as any)?.issues?.length
+        ? ["Issues: " + issuesToString((error as any)?.issues)]
+        : []),
     ]
       .filter(Boolean)
       .join("\n"),
@@ -43,12 +49,13 @@ const explicitError = ({
   return newError;
 };
 
-export const validateSchemaWithExplictError = <R extends UnknownSharedRoute>({
+export const validateSchemaWithExplicitError = <R extends UnknownSharedRoute>({
   checkedSchema,
   params = {},
   route,
   adapterName,
   responseStatus,
+  withIssuesInMessage = false,
 }: {
   checkedSchema: ExtractFromExisting<
     keyof UnknownSharedRoute,
@@ -58,6 +65,7 @@ export const validateSchemaWithExplictError = <R extends UnknownSharedRoute>({
   route: R;
   adapterName: string;
   responseStatus?: CheckedSchema extends "responses" ? keyof R["responses"] : never;
+  withIssuesInMessage?: boolean;
 }) => {
   try {
     if (checkedSchema === "responses") {
@@ -75,6 +83,7 @@ export const validateSchemaWithExplictError = <R extends UnknownSharedRoute>({
       adapterName,
       checkedSchema,
       statusCode: responseStatus,
+      withIssuesInMessage,
     });
   }
 };
@@ -83,24 +92,30 @@ export const validateInputParams = (
   route: UnknownSharedRoute,
   params: HandlerParams<UnknownSharedRoute>,
   adapterName: string,
+  options: { withIssuesInMessage: boolean } = {
+    withIssuesInMessage: false,
+  },
 ) => {
-  const queryParams = validateSchemaWithExplictError({
+  const { withIssuesInMessage } = options;
+  const queryParams = validateSchemaWithExplicitError({
     adapterName,
     checkedSchema: "queryParamsSchema",
     params: params.queryParams,
     route,
+    withIssuesInMessage,
   });
 
-  const body = validateSchemaWithExplictError({
+  const body = validateSchemaWithExplicitError({
     adapterName,
     checkedSchema: "requestBodySchema",
     params: params.body,
     route,
+    withIssuesInMessage,
   });
 
   // we validate headers separately because we don't want to re-affect req.headers parsed value
   // because we don't want to lose all other headers
-  validateSchemaWithExplictError({
+  validateSchemaWithExplicitError({
     adapterName,
     checkedSchema: "headersSchema",
     params: params.headers,
@@ -109,3 +124,6 @@ export const validateInputParams = (
 
   return { queryParams, body, headers: params.headers };
 };
+
+const issuesToString = (issues: ZodIssue[]) =>
+  issues.map(({ message, path }) => `${path.join(".")}: ${message}`).join(" | ");

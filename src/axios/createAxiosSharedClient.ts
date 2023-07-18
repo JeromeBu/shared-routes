@@ -5,7 +5,7 @@ import { ResponseType } from "../defineRoutes";
 import {
   ValidationOptions,
   validateInputParams,
-  validateSchemaWithExplictError,
+  validateSchemaWithExplicitError,
 } from "../validations";
 
 const toAxiosResponseType: Record<ResponseType, AxiosResponseType> = {
@@ -26,7 +26,7 @@ export const createAxiosHandlerCreator =
 
     const { body, headers, queryParams } = options?.skipInputValidation
       ? params
-      : validateInputParams(route, params as any, "axios");
+      : validateInputParams(route, params as any, "axios", { withIssuesInMessage: true });
 
     const { data, status, ...rest } = await axios.request({
       method: route.method,
@@ -42,12 +42,13 @@ export const createAxiosHandlerCreator =
 
     const responseBody = options?.skipResponseValidation
       ? data
-      : validateSchemaWithExplictError({
+      : validateSchemaWithExplicitError({
           adapterName: "axios",
           checkedSchema: "responses",
           responseStatus: status as any,
           params: data,
           route,
+          withIssuesInMessage: true,
         });
 
     return { ...rest, status, body: responseBody };

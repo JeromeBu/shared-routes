@@ -144,6 +144,7 @@ describe("createAxiosSharedCaller", () => {
           [
             `Shared-route schema 'requestBodySchema' was not respected in adapter '${name}'.`,
             "Route: POST https://jsonplaceholder.typicode.com/posts",
+            "Issues: title: Required | body: Required | userId: Required",
           ].join("\n"),
         );
 
