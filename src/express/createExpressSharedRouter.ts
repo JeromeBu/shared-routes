@@ -1,7 +1,7 @@
 import type { IRoute, RequestHandler, Router } from "express";
 import type { PathParameters, UnknownSharedRoute } from "..";
 import { keys } from "..";
-import { z, ZodError } from "zod";
+import { z, ZodError, ZodIssue } from "zod";
 import { ValidationOptions, validateInputParams } from "../validations";
 import { ValueOf } from "../defineRoutes";
 
@@ -25,15 +25,25 @@ const makeValidationMiddleware =
     } catch (error: any) {
       const zodError = error.cause as ZodError;
       res.status(400);
+      console.log("ISSUES : ", zodError.issues);
       res.json({
         status: 400,
         message: error.message,
-        issues: zodError.issues.map(
-          ({ message, path }) => `${path.join(".")} : ${message}`,
-        ),
+        issues: Array.from(new Set(zodIssuesToStrings(zodError.issues))),
       });
     }
   };
+
+const zodIssuesToStrings = (zodIssues: ZodIssue[]): string[] => {
+  return zodIssues.flatMap((zodIssue) => {
+    if (zodIssue.code === "invalid_union") {
+      return zodIssue.unionErrors.flatMap(({ issues }) => zodIssuesToStrings(issues));
+    }
+
+    const { message, path } = zodIssue;
+    return `${path.join(".")} : ${message}`;
+  });
+};
 
 const assignHandlersToExpressRouter = (
   expressRouter: Router,
