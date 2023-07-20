@@ -6,8 +6,7 @@
 
 <p align="center">
     <i>
-    One place to define your routes. 
-    <br>Keep front, back, tests and documentation synchronized and type safe
+    Restful Harmony: Defining & Synchronizing Your Routes Effortlessly 
     </i>
     <br>
     <br>
@@ -30,9 +29,26 @@
   <a href="https://github.com/JeromeBu/shared-routes-demo">Demo project</a>
 </p>
 
-<p>The purpose of this library, is to provide a convenient way to share the routes definition. It is particularly convenient inside a monorepo, where you can share the routes as an internal package and than import them where needed</p>
+<p>
+Shared-routes is an open-source library that streamlines the definition of REST API endpoints and provides type definitions and utilities for seamless frontend, tests, and documentation integration.
+</p>
 
-Here is how it can help you :
+<h3>Key Features</h3>
+<ul>
+  <li><strong>📚 Declarative API Design:</strong> Shared routes enables a declarative way to define REST API endpoints, ensuring a user-friendly development experience.</li>
+
+  <li><strong>🔄 Full Compatibility:</strong> Unlike TRPC, it generates completely valid REST APIs that can be requested even without the utilization of generated utilities.</li>
+
+  <li><strong>🔄 Synchronization:</strong> Maintain perfect synchronization across your frontend, backend, tests, and documentation, while ensuring type safety.</li>
+
+  <li><strong>📦 Monorepo Friendly:</strong> This library shines especially in a monorepo setup where route definitions can be shared as an internal package, allowing them to be imported wherever required.</li>
+
+  <li><strong>🔧 Exportable Utils:</strong> It comes with an ability to export type definitions and utilities that can be used in the frontend, providing a fluid API interaction experience.</li>
+
+  <li><strong>✅ Type Safety:</strong> With Shared routes, rest assured of having a type-safe environment that reduces potential errors and enhances code predictability.</li>
+<ul>
+
+<h3>Here is how it can help you:</h3>
 
 https://github.com/JeromeBu/shared-routes/assets/22095555/0664640e-ce4b-448b-b8d2-4b0761768b84
 
