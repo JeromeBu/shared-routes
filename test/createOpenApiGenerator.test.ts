@@ -30,7 +30,7 @@ const routes = defineRoutes({
   }),
 });
 
-const rootInfo = {
+const rootInfo: Parameters<typeof createOpenApiGenerator>[1] = {
   info: {
     title: "My book API",
     description: "My test openApi description",
@@ -48,7 +48,7 @@ const rootInfo = {
       },
     },
   },
-} satisfies Parameters<typeof createOpenApiGenerator>[1];
+};
 
 const generateOpenApi = createOpenApiGenerator({ Books: routes }, rootInfo);
 
@@ -260,6 +260,18 @@ const expected: OpenAPIV3_1.Document = {
         responses: {
           "201": {
             description: "Success 201 for addBook. Returns void",
+            content: {
+              "application/json": {
+                schema: {
+                  anyOf: [
+                    {
+                      maxLength: 0,
+                      type: "string",
+                    },
+                  ],
+                },
+              },
+            },
           },
         },
       },
