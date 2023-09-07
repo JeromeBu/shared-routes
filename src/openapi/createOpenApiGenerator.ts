@@ -173,11 +173,6 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
 
                 responses: keys(route.responses).reduce((acc, status) => {
                   const responseSchema = zodToOpenApi(route.responses[status]);
-                  const responseSchemaType:
-                    | OpenAPI.NonArraySchemaObjectType
-                    | OpenAPI.ArraySchemaObjectType
-                    | undefined = (responseSchema as any).type;
-
                   const { example, examples, ...responseDoc } =
                     extraDocs?.responses?.[status] ?? {};
 
@@ -185,7 +180,7 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
                     ...acc,
                     [status.toString()]: {
                       ...responseDoc,
-                      ...(responseSchemaType !== undefined && {
+                      ...(typeof responseSchema === "object" && {
                         content: {
                           "application/json": {
                             ...(example && { example }),
