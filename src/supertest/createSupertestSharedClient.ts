@@ -1,4 +1,4 @@
-import type { HttpMethod, UnknownSharedRoute, Url } from "..";
+import type { HttpMethod, HttpResponse, UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
 
 import type { SuperTest, Test } from "supertest";
@@ -12,7 +12,9 @@ export const createSupertestHandlerCreator =
   (supertestRequest: SuperTest<Test>): HandlerCreator<any> =>
   (routeName, routes, replaceParamsInUrl) => {
     const route = routes[routeName];
-    return async ({ headers, body, queryParams, urlParams } = {}): Promise<any> => {
+    return async ({ headers, body, queryParams, urlParams } = {}): Promise<
+      HttpResponse<any, any>
+    > => {
       const result = await supertestRequestToCorrectHttpMethod(
         supertestRequest,
         route.method,
@@ -27,6 +29,7 @@ export const createSupertestHandlerCreator =
         ...(!Object.keys(route.responses).includes(result.status.toString()) && {
           text: result.text,
         }),
+        headers: result.headers,
       };
     };
   };

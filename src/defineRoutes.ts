@@ -1,4 +1,5 @@
 import { z, ZodVoid } from "zod";
+import { HttpResponse } from "./configureCreateHttpClient";
 import type { Url } from "./pathParameters";
 
 export type UnknownResponses = { [K: number]: z.ZodSchema<unknown> };
@@ -6,27 +7,10 @@ export type UnknownResponses = { [K: number]: z.ZodSchema<unknown> };
 export type ValueOf<T> = T[keyof T];
 
 export type ResponsesToHttpResponse<Responses extends UnknownResponses> = ValueOf<
-  {
-    [K in keyof Responses]: { status: K; body: z.infer<Responses[K]> };
-  }
+  { [K in keyof Responses]: HttpResponse<K, z.infer<Responses[K]>> }
 >;
 
-// const responses = {
-//   200: z.object({ foo: z.string() }),
-//   400: z.object({ bar: z.string() }),
-// } satisfies UnknownResponses;
-
-// z.infer<SharedRoutes[Route]["responses"][number]>,
-// type MyResponses = typeof responses;
-
-// type AcceptedResponse = ResponsesToHttpResponse<MyResponses>
-// declare const a: AcceptedResponse
-// if(a.status === 200) {
-//   a.body.foo
-// }
-
-// prettier-ignore
-export type ResponseType = 'json' | 'arrayBuffer' | 'blob' | 'text'
+export type ResponseType = "json" | "arrayBuffer" | "blob" | "text";
 
 type OptionalFields<RequestBody, Query, Responses extends UnknownResponses, Headers> = {
   requestBodySchema?: z.Schema<RequestBody>;

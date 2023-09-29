@@ -65,7 +65,7 @@ describe("createAxiosSharedCaller", () => {
     };
   });
 
-  describe.skip("Actually calling an endpoint", () => {
+  describe("Actually calling an endpoint", () => {
     // WARNING : This test uses an actual placeholder api (which might not always be available...)
     const todoSchema = z.object({
       userId: z.number(),
@@ -137,6 +137,9 @@ describe("createAxiosSharedCaller", () => {
         });
         expect(addPostResponse.body.id).toBeTypeOf("number");
         expect(addPostResponse.status).toBe(201);
+        expect(addPostResponse.headers).toMatchObject({
+          "content-type": "application/json; charset=utf-8",
+        });
 
         await expect(
           httpClient.addPost({ body: { wrong: "body" } as any }),

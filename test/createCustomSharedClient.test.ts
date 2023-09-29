@@ -37,15 +37,17 @@ const createTestHttpClient = () => {
   return createCustomSharedClient(myRoutes, {
     addBook: async ({ body }) => {
       books.push(body);
-      return { status: 201 as const, body: undefined };
+      return { status: 201 as const, body: undefined, headers: {} };
     },
     getAllBooks: async () => ({
       status: 200 as const,
       body: books,
+      headers: {},
     }),
     getByTitle: async ({ urlParams: { title } }) => ({
       status: 200 as const,
       body: books.find((book) => book.title.toLowerCase().includes(title.toLowerCase())),
+      headers: {},
     }),
   });
 };

@@ -10,6 +10,16 @@ import {
   validateSchemaWithExplicitError,
 } from "../validations";
 
+const objectFromEntries = (
+  entries: Iterable<[string, string]>,
+): Record<string, string> => {
+  const result: Record<string, string> = {};
+  for (const [key, value] of entries) {
+    result[key] = value;
+  }
+  return result;
+};
+
 declare function browserFetch(
   input: RequestInfo | URL,
   init?: RequestInit,
@@ -70,7 +80,11 @@ export const createFetchHandlerCreator =
           withIssuesInMessage: true,
         });
 
-    return { body: responseBody, status: res.status };
+    return {
+      body: responseBody,
+      status: res.status,
+      headers: objectFromEntries(res.headers.entries()),
+    };
   };
 
 const responseTypeToResponseBody = (res: FetchResponse, responseType: ResponseType) => {
