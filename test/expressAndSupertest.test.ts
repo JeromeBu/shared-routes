@@ -165,18 +165,20 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
       urlParams: { title: "Hey" },
     });
 
-    expectToEqual(fetchedBookResponse, {
+    expectToMatch(fetchedBookResponse, {
       status: 200,
       body: heyBook,
+      headers: { "content-type": "application/json; charset=utf-8" },
     });
 
     const bookNotFoundResponse = await supertestSharedCaller.getBookByTitle({
       urlParams: { title: "not found" },
     });
 
-    expectToEqual(bookNotFoundResponse, {
+    expectToMatch(bookNotFoundResponse, {
       status: 404,
       body: { message: "Book not found" },
+      headers: { "content-type": "application/json; charset=utf-8" },
     });
 
     // should compile without having to provide any params
@@ -199,6 +201,8 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
 });
 
 const expectToEqual = <T>(actual: T, expected: T) => expect(actual).toEqual(expected);
+const expectToMatch = <T>(actual: T, expected: Partial<T>) =>
+  expect(actual).toMatchObject(expected);
 
 // type Book = { title: string; author: string };
 // const bookSchema: z.Schema<Book> = z.object({

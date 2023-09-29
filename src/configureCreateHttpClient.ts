@@ -16,9 +16,10 @@ import {
 type EmptyObj = Record<string, never>;
 type AnyObj = Record<string, unknown>;
 
-export type HttpResponse<Status extends number, ResponseBody> = {
+export type HttpResponse<Status extends number | string | symbol, ResponseBody> = {
   status: Status;
   body: ResponseBody;
+  headers: Record<string, unknown>;
 };
 
 // prettier-ignore
