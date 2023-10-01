@@ -56,6 +56,11 @@ const assignHandlersToExpressRouter = (
     expressRouter.route(url)[route.method](validationMiddleware, handlers);
 };
 
+// this should be imported from express, but I couldn't find it. It comes from 'qs' package
+interface ParsedQs {
+  [key: string]: undefined | string | string[] | ParsedQs | ParsedQs[];
+}
+
 export const createExpressSharedRouter = <
   SharedRoutes extends Record<string, UnknownSharedRoute>,
   ExpressSharedRouter extends {
@@ -64,7 +69,9 @@ export const createExpressSharedRouter = <
         PathParameters<SharedRoutes[Route]["url"]>,
         z.infer<ValueOf<SharedRoutes[Route]["responses"]>>,
         z.infer<SharedRoutes[Route]["requestBodySchema"]>,
-        z.infer<SharedRoutes[Route]["queryParamsSchema"]>,
+        z.infer<SharedRoutes[Route]["queryParamsSchema"]> extends void
+          ? ParsedQs
+          : z.infer<SharedRoutes[Route]["queryParamsSchema"]>,
         any
       >[]
     ) => IRoute;

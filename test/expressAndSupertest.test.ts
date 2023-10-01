@@ -57,11 +57,15 @@ const createBookRouter = (): ExpressRouter => {
 
   const expressSharedRouter = createExpressSharedRouter(routes, expressRouter);
 
+  const someMiddleware: express.RequestHandler = (_req, _res, next) => {
+    next();
+  };
+
   expressSharedRouter.getAllBooks((_, res) => {
     return res.json(bookDB);
   });
 
-  expressSharedRouter.addBook((req, res) => {
+  expressSharedRouter.addBook(someMiddleware, (req, res) => {
     if (req.headers.authorization !== fakeAuthToken) {
       res.status(401);
       return res.json();
