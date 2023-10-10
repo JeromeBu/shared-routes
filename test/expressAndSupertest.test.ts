@@ -31,7 +31,10 @@ const routes = defineRoutes({
   getAllBooks: defineRoute({
     method: "get",
     url: "/books",
-    queryParamsSchema: z.object({ max: zNumberFromString }),
+    queryParamsSchema: z.object({
+      max: zNumberFromString,
+      startWith: z.array(z.string()),
+    }),
     responses: { 200: z.array(bookSchema) },
   }),
   getBookByTitle: defineRoute({
@@ -62,6 +65,7 @@ const createBookRouter = (): ExpressRouter => {
   };
 
   expressSharedRouter.getAllBooks((_, res) => {
+    console.log("yeah reached ! ", bookDB);
     return res.json(bookDB);
   });
 
@@ -128,13 +132,13 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
     const supertestSharedCaller = createSupertestSharedClient(routes, supertestRequest);
 
     const getAllBooksResponse = await supertestSharedCaller.getAllBooks({
-      queryParams: { max: "yolo" as any },
+      queryParams: { max: "yolo" } as any,
     });
     expect(getAllBooksResponse.body).toEqual({
       status: 400,
       message:
         "Shared-route schema 'queryParamsSchema' was not respected in adapter 'express'.\nRoute: GET /books",
-      issues: ["max : Expected number, received string"],
+      issues: ["max : Expected number, received string", "startWith : Required"],
     });
     expect(getAllBooksResponse.status).toBe(400);
   });
@@ -160,7 +164,7 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
     });
 
     const getAllBooksResponse = await supertestSharedCaller.getAllBooks({
-      queryParams: { max: 5 },
+      queryParams: { max: 5, startWith: ["yolo"] },
     });
     expectToEqual(getAllBooksResponse.body, [heyBook, otherBook]);
     expect(getAllBooksResponse.status).toBe(200);

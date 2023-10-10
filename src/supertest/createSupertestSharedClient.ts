@@ -15,13 +15,20 @@ export const createSupertestHandlerCreator =
     return async ({ headers, body, queryParams, urlParams } = {}): Promise<
       HttpResponse<any, any>
     > => {
+      const queryParamsWithCorrectArrays = Object.fromEntries(
+        Object.entries(queryParams ?? {}).map(([key, value]) => [
+          Array.isArray(value) ? `${key}[]` : key,
+          value,
+        ]),
+      );
+
       const result = await supertestRequestToCorrectHttpMethod(
         supertestRequest,
         route.method,
       )(replaceParamsInUrl(route.url, urlParams))
         .send(body)
         .set(headers ?? {})
-        .query(queryParams);
+        .query(queryParamsWithCorrectArrays);
 
       return {
         status: result.status,
