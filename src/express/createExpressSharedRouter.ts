@@ -3,7 +3,7 @@ import type { PathParameters, UnknownSharedRoute } from "..";
 import { keys } from "..";
 import { z, ZodError, ZodIssue } from "zod";
 import { ValidationOptions, validateInputParams } from "../validations";
-import { ValueOf } from "../defineRoutes";
+import { ValueOfIndexNumber } from "../defineRoutes";
 
 type ExpressSharedRouterOptions = Pick<ValidationOptions, "skipInputValidation">;
 
@@ -64,10 +64,10 @@ interface ParsedQs {
 export const createExpressSharedRouter = <
   SharedRoutes extends Record<string, UnknownSharedRoute>,
   ExpressSharedRouter extends {
-    [Route in keyof SharedRoutes]: (
+    [Route in keyof SharedRoutes & string]: (
       ...handlers: RequestHandler<
         PathParameters<SharedRoutes[Route]["url"]>,
-        z.infer<ValueOf<SharedRoutes[Route]["responses"]>>,
+        z.infer<ValueOfIndexNumber<SharedRoutes[Route]["responses"]>>,
         z.infer<SharedRoutes[Route]["requestBodySchema"]>,
         z.infer<SharedRoutes[Route]["queryParamsSchema"]> extends void
           ? ParsedQs

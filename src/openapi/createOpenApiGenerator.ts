@@ -76,7 +76,8 @@ type CreateOpenApiGenerator = <
                 ExtraDocParameter<z.infer<SharedRoutesByTag[Tag][R]["headersSchema"]>[K]>}
 
             responses: {
-              [S in keyof SharedRoutesByTag[Tag][R]["responses"]]: OpenAPI.ResponseObject &
+              [S in keyof SharedRoutesByTag[Tag][R]["responses"] &
+                number]: OpenAPI.ResponseObject &
                 WithExampleOrExamples<z.infer<SharedRoutesByTag[Tag][R]["responses"][S]>>;
             };
           };
