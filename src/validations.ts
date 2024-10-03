@@ -7,6 +7,8 @@ export type ValidationOptions = {
   skipInputValidation?: boolean;
   /* if true, will not validate response body */
   skipResponseValidation?: boolean;
+  /* list of response status codes for which validation will be skipped */
+  skipResponseValidationForStatuses?: number[];
 };
 
 type ExtractFromExisting<T, U extends T> = Extract<T, U>;

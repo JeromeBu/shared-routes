@@ -164,6 +164,7 @@ describe("createAxiosSharedCaller", () => {
           ].join("\n"),
         );
       },
+      { timeout: 3_000 },
     );
 
     it.each([
@@ -185,6 +186,35 @@ describe("createAxiosSharedCaller", () => {
           body: { title: "My great post", body: "Some content", userId: 1 },
         });
         expect(addPostResponse.body.id).toBeTypeOf("number");
+      },
+    );
+
+    const skippedStatuses = [200];
+
+    it.each([
+      {
+        name: "axios",
+        httpClient: createAxiosSharedClient(routes, axios, {
+          skipResponseValidationForStatuses: skippedStatuses,
+        }),
+      },
+      {
+        name: "fetch",
+        httpClient: createFetchSharedClient(routes, fetch, {
+          skipResponseValidationForStatuses: skippedStatuses,
+        }),
+      },
+    ])(
+      "can skip the response validation for some selected statuses, for $name",
+      async ({ httpClient }) => {
+        const postId = "1";
+        const body = { title: "My great post", body: "Some content", userId: 1 };
+        const response = await httpClient.updatePostWithIncorrectReturnCode({
+          urlParams: { postId: "1" },
+          body,
+        });
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({ ...body, id: +postId });
       },
     );
 

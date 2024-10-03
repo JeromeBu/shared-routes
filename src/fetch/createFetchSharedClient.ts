@@ -69,16 +69,18 @@ export const createFetchHandlerCreator =
 
     const processedBody = await responseTypeToResponseBody(res, route.responseType);
 
-    const responseBody = options.skipResponseValidation
-      ? processedBody
-      : validateSchemaWithExplicitError({
-          adapterName: "fetch",
-          checkedSchema: "responses",
-          responseStatus: res.status as any,
-          params: processedBody,
-          route,
-          withIssuesInMessage: true,
-        });
+    const responseBody =
+      options?.skipResponseValidation ||
+      options?.skipResponseValidationForStatuses?.includes(res.status)
+        ? processedBody
+        : validateSchemaWithExplicitError({
+            adapterName: "fetch",
+            checkedSchema: "responses",
+            responseStatus: res.status as any,
+            params: processedBody,
+            route,
+            withIssuesInMessage: true,
+          });
 
     return {
       body: responseBody,
