@@ -40,16 +40,18 @@ export const createAxiosHandlerCreator =
       },
     });
 
-    const responseBody = options?.skipResponseValidation
-      ? data
-      : validateSchemaWithExplicitError({
-          adapterName: "axios",
-          checkedSchema: "responses",
-          responseStatus: status as any,
-          params: data,
-          route,
-          withIssuesInMessage: true,
-        });
+    const responseBody =
+      options?.skipResponseValidation ||
+      options?.skipResponseValidationForStatuses?.includes(status)
+        ? data
+        : validateSchemaWithExplicitError({
+            adapterName: "axios",
+            checkedSchema: "responses",
+            responseStatus: status as any,
+            params: data,
+            route,
+            withIssuesInMessage: true,
+          });
 
     return { ...rest, status, body: responseBody };
   };
