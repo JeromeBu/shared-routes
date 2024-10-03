@@ -105,7 +105,7 @@ jobs:
         ref: ${{ github.ref }}
     - uses: pnpm/action-setup@v2
       with:
-        version: 8
+        version: 9
     - run: rm -r .github
     - name: Remove tmp_branch if it exists
       run: git push origin :tmp_branch || true
