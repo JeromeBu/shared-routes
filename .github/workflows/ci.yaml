@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node: [ '18' ]
+        node: [ '20' ]
         os: [ windows-latest, ubuntu-latest ]
     name: Test with Node v${{ matrix.node }} on ${{ matrix.os }}
     steps:
@@ -41,7 +41,7 @@ jobs:
         version: 8
     - uses: actions/setup-node@v3
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'pnpm'
     - name: Cache
       uses: actions/cache@v3
