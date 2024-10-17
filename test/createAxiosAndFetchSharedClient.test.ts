@@ -4,7 +4,6 @@ import { z } from "zod";
 import { createAxiosSharedClient } from "../src/axios";
 import { createFetchSharedClient } from "../src/fetch";
 import { describe, it, expect } from "vitest";
-import fetch from "node-fetch";
 
 describe("createAxiosSharedCaller", () => {
   it("create a caller from axios and sharedRoutes object", async () => {
@@ -41,6 +40,7 @@ describe("createAxiosSharedCaller", () => {
 
     // the code below will not past test as no server is receiving the calls,
     // but it is usefull to check that types are working fine.
+    // @ts-ignore
     const _notExecuted = async () => {
       const addBookResponse = await axiosSharedCaller.addBook({
         body: { title: "lala", author: "bob" },

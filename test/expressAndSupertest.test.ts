@@ -217,7 +217,7 @@ const expectToMatch = <T>(actual: T, expected: Partial<T>) =>
 //   title: z.string(),
 //   author: z.string(),
 // });
-
+// @ts-ignore
 const _routes = defineRoutes({
   addBook: defineRoute({
     method: "post",

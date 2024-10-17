@@ -7,7 +7,7 @@
     "url": "git@github.com:JeromeBu/shared-routes.git"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit -p test",
+    "typecheck": "tsc --noEmit",
     "build": "pnpm build:cjs && pnpm build:esm # && pnpm build:deno",
     "watch": "tsc -w & tsc -p tsconfig.esm.json -w",
     "build:cjs": "tsc",
@@ -65,13 +65,12 @@
     "husky": "^8.0.0",
     "js2mjs": "^0.3.0",
     "lint-staged": "^11.1.1",
-    "node-fetch": "^3.3.1",
     "openapi-types": "^12.1.0",
     "prettier": "^2.3.2",
     "supertest": "^6.3.3",
     "ts-node": "^10.9.1",
-    "typescript": "^5.3.2",
-    "vitest": "^0.31.0",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.2",
     "zod": "^3.22.4",
     "zod-to-json-schema": "^3.21.0"
   },
