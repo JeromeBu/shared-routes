@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+
 import axios from "axios";
 import { defineRoute, defineRoutes, listRoutes } from "../src";
 import { z } from "zod";
@@ -40,7 +42,6 @@ describe("createAxiosSharedCaller", () => {
 
     // the code below will not past test as no server is receiving the calls,
     // but it is usefull to check that types are working fine.
-    // @ts-ignore
     const _notExecuted = async () => {
       const addBookResponse = await axiosSharedCaller.addBook({
         body: { title: "lala", author: "bob" },

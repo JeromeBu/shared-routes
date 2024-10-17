@@ -73,11 +73,16 @@ export const createFetchHandlerCreator =
             route,
             withIssuesInMessage: true,
           });
+
+    console.log({
+      "res.headers": res.headers,
+      "res.headers.entries()": (res.headers as any).entries(),
+    });
+
     return {
       body: responseBody,
       status: res.status,
-      // @ts-ignore
-      headers: objectFromEntries(res.headers.entries()),
+      headers: objectFromEntries((res.headers as any).entries()),
     };
   };
 
