@@ -1,0 +1,1 @@
+{"version":3,"file":"createCustomSharedClient.js","sourceRoot":"","sources":["createCustomSharedClient.ts"],"names":[],"mappings":";;;AAAA,yEAAwE;AAIjE,IAAM,wBAAwB,GAAG,UAGtC,YAA0B,EAC1B,cAEC;IAED,IAAM,gBAAgB,GAAG,IAAA,qDAAyB,EAAC,UAAC,SAAS;QAC3D,OAAO,cAAc,CAAC,SAAS,CAAQ,CAAC;IAC1C,CAAC,CAAQ,CAAC;IAEV,OAAO,gBAAgB,CAAC,YAAY,CAAC,CAAC;AACxC,CAAC,CAAC;AAbW,QAAA,wBAAwB,4BAanC"}
