@@ -225,7 +225,7 @@ const extractFromUrl = (
       schema: { type: "string" },
       in: "path",
     });
-    return `{${group1}}` + group2 ?? "";
+    return `{${group1}}` + group2;
   });
 
   return {

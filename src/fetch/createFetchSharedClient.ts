@@ -2,8 +2,6 @@ import type { HttpResponse, UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
 import { ResponseType } from "../defineRoutes";
 import { queryParamsToString } from "./queryParamsToString";
-import type nodeFetch from "node-fetch";
-import type { Response as FetchResponse } from "node-fetch";
 import {
   ValidationOptions,
   validateInputParams,
@@ -20,12 +18,7 @@ const objectFromEntries = (
   return result;
 };
 
-declare function browserFetch(
-  input: RequestInfo | URL,
-  init?: RequestInit,
-): Promise<FetchResponse>;
-
-type Fetch = typeof browserFetch | typeof nodeFetch;
+type Fetch = typeof fetch;
 
 type FetchConfig = RequestInit & { baseURL?: Url } & ValidationOptions;
 
@@ -68,7 +61,6 @@ export const createFetchHandlerCreator =
     );
 
     const processedBody = await responseTypeToResponseBody(res, route.responseType);
-
     const responseBody =
       options?.skipResponseValidation ||
       options?.skipResponseValidationForStatuses?.includes(res.status)
@@ -81,15 +73,15 @@ export const createFetchHandlerCreator =
             route,
             withIssuesInMessage: true,
           });
-
     return {
       body: responseBody,
       status: res.status,
+      // @ts-ignore
       headers: objectFromEntries(res.headers.entries()),
     };
   };
 
-const responseTypeToResponseBody = (res: FetchResponse, responseType: ResponseType) => {
+const responseTypeToResponseBody = (res: Response, responseType: ResponseType) => {
   switch (responseType) {
     case "json":
       return res.json();
