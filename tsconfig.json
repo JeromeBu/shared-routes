@@ -16,6 +16,6 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true
   },
-  "include": ["src", "test"],
+  "include": ["src"],
   "exclude": ["src/**/*.deno.ts", "src/**/*.deno.tsx"]
 }
