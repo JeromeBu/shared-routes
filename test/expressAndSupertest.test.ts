@@ -1,6 +1,7 @@
 import { defineRoute, defineRoutes, listRoutes } from "../src";
 import { createExpressSharedRouter } from "../src/express";
-import { z } from "zod";
+import { z, type ZodError } from "zod";
+import type { ExpressSharedRouterOptions } from "../src/express/createExpressSharedRouter";
 import { createSupertestSharedClient } from "../src/supertest/createSupertestSharedClient";
 import supertest from "supertest";
 import express from "express";
@@ -54,18 +55,27 @@ const routes = defineRoutes({
 
 const fakeAuthToken = "my-token";
 
-const createBookRouter = (): ExpressRouter => {
+type WithExpressSharedRouterOptions = {
+  expressSharedRouterOptions: ExpressSharedRouterOptions;
+};
+
+const createBookRouter = (
+  config: WithExpressSharedRouterOptions | void,
+): ExpressRouter => {
   const bookDB: Book[] = [];
   const expressRouter = ExpressRouter();
 
-  const expressSharedRouter = createExpressSharedRouter(routes, expressRouter);
+  const expressSharedRouter = createExpressSharedRouter(
+    routes,
+    expressRouter,
+    config?.expressSharedRouterOptions,
+  );
 
   const someMiddleware: express.RequestHandler = (_req, _res, next) => {
     next();
   };
 
   expressSharedRouter.getAllBooks((_, res) => {
-    console.log("yeah reached ! ", bookDB);
     return res.json(bookDB);
   });
 
@@ -97,10 +107,10 @@ const createBookRouter = (): ExpressRouter => {
   return expressRouter;
 };
 
-const createExempleApp = () => {
+const createExempleApp = (config: WithExpressSharedRouterOptions | void) => {
   const app = express();
   app.use(bodyParser.json());
-  app.use(createBookRouter());
+  app.use(createBookRouter(config));
   return app;
 };
 
@@ -205,6 +215,91 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
     });
     expect(result.status).toBe(500);
     expect((result as any).text).toContain("Some unexpected error");
+  });
+
+  describe("when providing a function onInputValidationError", () => {
+    it("supports a function that returns the original error with some extra side effect", async () => {
+      const calledWith: any[] = [];
+      const app = createExempleApp({
+        expressSharedRouterOptions: {
+          onInputValidationError: (zodError: ZodError) => {
+            calledWith.push(zodError);
+            return zodError;
+          },
+        },
+      });
+
+      const supertestRequest = supertest(app);
+      const supertestSharedCaller = createSupertestSharedClient(routes, supertestRequest);
+
+      const getAllBooksResponse = await supertestSharedCaller.getAllBooks({
+        queryParams: { max: "yolo" } as any,
+      });
+      expect(getAllBooksResponse.body).toEqual({
+        status: 400,
+        message:
+          "Shared-route schema 'queryParamsSchema' was not respected in adapter 'express'.\nRoute: GET /books",
+        issues: ["max : Expected number, received string", "startWith : Required"],
+      });
+      expect(getAllBooksResponse.status).toBe(400);
+      expect(calledWith).toHaveLength(1);
+      expect(calledWith[0].message).toEqual(
+        JSON.stringify(
+          [
+            {
+              "code": "invalid_type",
+              "expected": "number",
+              "received": "string",
+              "path": ["max"],
+              "message": "Expected number, received string",
+            },
+            {
+              "code": "invalid_type",
+              "expected": "array",
+              "received": "undefined",
+              "path": ["startWith"],
+              "message": "Required",
+            },
+          ],
+          null,
+          2,
+        ),
+      );
+    });
+
+    it("supports a function that edits the error to execute code after input validation error", async () => {
+      const app = createExempleApp({
+        expressSharedRouterOptions: {
+          onInputValidationError: (zodError: ZodError) => ({
+            myCustomMessage: `This is a different message, with ${zodError.issues.length} issues`,
+            myCustomIssues: zodError.issues.map(
+              (issue) => issue.path.join(".") + " : " + issue.message,
+            ),
+          }),
+        },
+      });
+
+      const supertestRequest = supertest(app);
+      const supertestSharedCaller = createSupertestSharedClient(routes, supertestRequest);
+
+      const getAllBooksResponse = await supertestSharedCaller.getAllBooks({
+        queryParams: { max: "yolo" } as any,
+      });
+      expect(getAllBooksResponse.body).toEqual(
+        JSON.stringify(
+          {
+            myCustomMessage: "This is a different message, with 2 issues",
+            myCustomIssues: [
+              "max : Expected number, received string",
+              "startWith : Required",
+            ],
+          },
+          null,
+          2,
+        ),
+      );
+      expect(getAllBooksResponse.status).toBe(400);
+    });
   });
 });
 
