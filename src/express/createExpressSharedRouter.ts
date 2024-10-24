@@ -6,7 +6,10 @@ import { ValidationOptions, validateInputParams } from "../validations";
 import { ValueOfIndexNumber } from "../defineRoutes";
 
 export type ExpressSharedRouterOptions = {
-  onInputValidationError?: (validationResult: ZodError) => unknown;
+  onInputValidationError?: (
+    validationResult: ZodError,
+    route: UnknownSharedRoute,
+  ) => unknown;
 } & Pick<ValidationOptions, "skipInputValidation">;
 
 const makeValidationMiddleware =
@@ -29,7 +32,7 @@ const makeValidationMiddleware =
       res.status(400);
 
       if (options?.onInputValidationError) {
-        const processedError = options.onInputValidationError(zodError);
+        const processedError = options.onInputValidationError(zodError, route);
         if (processedError !== zodError) {
           res.json(JSON.stringify(processedError, null, 2));
           return;

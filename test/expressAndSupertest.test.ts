@@ -270,7 +270,8 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
     it("supports a function that edits the error to execute code after input validation error", async () => {
       const app = createExempleApp({
         expressSharedRouterOptions: {
-          onInputValidationError: (zodError: ZodError) => ({
+          onInputValidationError: (zodError: ZodError, route) => ({
+            route: `${route.method.toUpperCase()} ${route.url}`,
             myCustomMessage: `This is a different message, with ${zodError.issues.length} issues`,
             myCustomIssues: zodError.issues.map(
               (issue) => issue.path.join(".") + " : " + issue.message,
@@ -288,6 +289,7 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
       expect(getAllBooksResponse.body).toEqual(
         JSON.stringify(
           {
+            route: "GET /books",
             myCustomMessage: "This is a different message, with 2 issues",
             myCustomIssues: [
               "max : Expected number, received string",
