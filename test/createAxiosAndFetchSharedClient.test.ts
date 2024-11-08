@@ -182,50 +182,57 @@ describe("createAxiosSharedCaller", () => {
         name: "axios",
         httpClient: createAxiosSharedClient(routes, axios, {
           skipInputValidation: true,
-          onResponseSideEffect: (response, route) =>
-            sideEffects.push({
-              ...response,
-              route: `${route.method.toUpperCase()} ${route.url}`,
-            }),
+          onResponseSideEffect: (result) => sideEffects.push(result),
         }),
       },
       {
         name: "fetch",
         httpClient: createFetchSharedClient(routes, fetch, {
           skipInputValidation: true,
-          onResponseSideEffect: (response, route) =>
-            sideEffects.push({
-              ...response,
-              route: `${route.method.toUpperCase()} ${route.url}`,
-            }),
+          onResponseSideEffect: (result) => sideEffects.push(result),
         }),
       },
     ])(
       "can skip the validation for input params or response, and have sideEffect function on response. For $name",
       async ({ httpClient }) => {
-        const response = await httpClient.addPost({ body: { wrong: "body" } as any });
+        const wrongInputBody = { wrong: "body" } as any;
+        const response = await httpClient.addPost({ body: wrongInputBody });
         expect(response.body).toBeTruthy();
 
+        const correctInputBody = {
+          title: "My great post",
+          body: "Some content",
+          userId: 1,
+        };
         const addPostResponse = await httpClient.addPost({
-          body: { title: "My great post", body: "Some content", userId: 1 },
+          body: correctInputBody,
         });
         expect(addPostResponse.body.id).toBeTypeOf("number");
-        expect(sideEffects).toMatchObject([
-          {
+        expect(sideEffects).toHaveLength(2);
+        expect(sideEffects[0]).toMatchObject({
+          route: routes.addPost,
+          durationInMs: expect.any(Number),
+          input: {
+            body: wrongInputBody,
+          },
+          response: {
             status: response.status,
             body: response.body,
             headers: response.headers,
-            durationInMs: expect.any(Number),
-            route: `POST ${routes.addPost.url}`,
           },
-          {
+        });
+        expect(sideEffects[1]).toMatchObject({
+          route: routes.addPost,
+          durationInMs: expect.any(Number),
+          input: {
+            body: correctInputBody,
+          },
+          response: {
             status: addPostResponse.status,
             body: addPostResponse.body,
             headers: addPostResponse.headers,
-            durationInMs: expect.any(Number),
-            route: `POST ${routes.addPost.url}`,
           },
-        ]);
+        });
       },
     );
 

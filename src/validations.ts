@@ -10,10 +10,16 @@ export type HttpClientOptions = {
   /* list of response status codes for which validation will be skipped */
   skipResponseValidationForStatuses?: number[];
   /* callback called on each response, useful for logging or debugging, this is called before response validation */
-  onResponseSideEffect?: (
-    response: HttpResponse<any, any> & { durationInMs: number },
-    route: UnknownSharedRoute,
-  ) => void;
+  onResponseSideEffect?: (params: {
+    response: HttpResponse<any, any>;
+    route: UnknownSharedRoute;
+    durationInMs: number;
+    input: {
+      body?: unknown;
+      queryParams?: unknown;
+      urlParams?: unknown;
+    };
+  }) => void;
 };
 
 type ExtractFromExisting<T, U extends T> = Extract<T, U>;
