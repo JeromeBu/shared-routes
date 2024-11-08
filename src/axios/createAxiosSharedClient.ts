@@ -28,6 +28,7 @@ export const createAxiosHandlerCreator =
       ? params
       : validateInputParams(route, params as any, "axios", { withIssuesInMessage: true });
 
+    const queryStartTime = Date.now();
     const { data, status, ...rest } = await axios.request({
       method: route.method,
       url: replaceParamsInUrl(route.url, urlParams as Url),
@@ -45,6 +46,7 @@ export const createAxiosHandlerCreator =
         status,
         body: data,
         headers: rest.headers,
+        durationInMs: Date.now() - queryStartTime,
       });
     }
 

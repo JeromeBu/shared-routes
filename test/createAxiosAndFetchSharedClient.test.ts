@@ -207,11 +207,13 @@ describe("createAxiosSharedCaller", () => {
             status: response.status,
             body: response.body,
             headers: response.headers,
+            durationInMs: expect.any(Number),
           },
           {
             status: addPostResponse.status,
             body: addPostResponse.body,
             headers: addPostResponse.headers,
+            durationInMs: expect.any(Number),
           },
         ]);
       },

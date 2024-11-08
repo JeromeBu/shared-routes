@@ -44,6 +44,7 @@ export const createFetchHandlerCreator =
 
     const { baseURL, ...defaultInit } = options;
 
+    const queryStartTime = Date.now();
     const res = await fetch(
       (baseURL ? baseURL : "") +
         replaceParamsInUrl(route.url, urlParams as Url) +
@@ -69,6 +70,7 @@ export const createFetchHandlerCreator =
         status: res.status,
         body: processedBody,
         headers: headersAsObject,
+        durationInMs: Date.now() - queryStartTime,
       });
     }
 
