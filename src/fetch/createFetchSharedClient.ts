@@ -3,7 +3,7 @@ import { configureCreateHttpClient, HandlerCreator } from "..";
 import { ResponseType } from "../defineRoutes";
 import { queryParamsToString } from "./queryParamsToString";
 import {
-  ValidationOptions,
+  HttpClientOptions,
   validateInputParams,
   validateSchemaWithExplicitError,
 } from "../validations";
@@ -20,7 +20,7 @@ const objectFromEntries = (
 
 type Fetch = typeof fetch;
 
-type FetchConfig = RequestInit & { baseURL?: Url } & ValidationOptions;
+type FetchConfig = RequestInit & { baseURL?: Url } & HttpClientOptions;
 
 export const createFetchHandlerCreator =
   <SharedRoutes extends Record<string, UnknownSharedRoute>>(
@@ -61,6 +61,17 @@ export const createFetchHandlerCreator =
     );
 
     const processedBody = await responseTypeToResponseBody(res, route.responseType);
+
+    const headersAsObject = objectFromEntries((res.headers as any).entries());
+
+    if (options?.onResponseSideEffect) {
+      options.onResponseSideEffect({
+        status: res.status,
+        body: processedBody,
+        headers: headersAsObject,
+      });
+    }
+
     const responseBody =
       options?.skipResponseValidation ||
       options?.skipResponseValidationForStatuses?.includes(res.status)
@@ -74,15 +85,10 @@ export const createFetchHandlerCreator =
             withIssuesInMessage: true,
           });
 
-    console.log({
-      "res.headers": res.headers,
-      "res.headers.entries()": (res.headers as any).entries(),
-    });
-
     return {
       body: responseBody,
       status: res.status,
-      headers: objectFromEntries((res.headers as any).entries()),
+      headers: headersAsObject,
     };
   };
 

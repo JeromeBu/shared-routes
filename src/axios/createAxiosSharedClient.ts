@@ -3,7 +3,7 @@ import type { UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
 import { ResponseType } from "../defineRoutes";
 import {
-  ValidationOptions,
+  HttpClientOptions,
   validateInputParams,
   validateSchemaWithExplicitError,
 } from "../validations";
@@ -18,7 +18,7 @@ const toAxiosResponseType: Record<ResponseType, AxiosResponseType> = {
 export const createAxiosHandlerCreator =
   <SharedRoutes extends Record<string, UnknownSharedRoute>>(
     axios: AxiosInstance,
-    options?: ValidationOptions,
+    options?: HttpClientOptions,
   ): HandlerCreator<SharedRoutes> =>
   (routeName, routes, replaceParamsInUrl) =>
   async ({ urlParams, ...params } = {}) => {
@@ -39,6 +39,14 @@ export const createAxiosHandlerCreator =
         ...(headers ?? ({} as any)),
       },
     });
+
+    if (options?.onResponseSideEffect) {
+      options.onResponseSideEffect({
+        status,
+        body: data,
+        headers: rest.headers,
+      });
+    }
 
     const responseBody =
       options?.skipResponseValidation ||
@@ -61,7 +69,7 @@ export const createAxiosSharedClient = <
 >(
   sharedRouters: SharedRoutes,
   axios: AxiosInstance,
-  validationOptions?: ValidationOptions,
+  validationOptions?: HttpClientOptions,
 ) =>
   configureCreateHttpClient(createAxiosHandlerCreator(axios, validationOptions))(
     sharedRouters,

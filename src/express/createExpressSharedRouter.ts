@@ -2,7 +2,7 @@ import type { IRoute, RequestHandler, Router } from "express";
 import type { PathParameters, UnknownSharedRoute } from "..";
 import { keys } from "..";
 import { z, ZodError, ZodIssue } from "zod";
-import { ValidationOptions, validateInputParams } from "../validations";
+import { HttpClientOptions, validateInputParams } from "../validations";
 import { ValueOfIndexNumber } from "../defineRoutes";
 
 export type ExpressSharedRouterOptions = {
@@ -10,7 +10,7 @@ export type ExpressSharedRouterOptions = {
     validationResult: ZodError,
     route: UnknownSharedRoute,
   ) => unknown;
-} & Pick<ValidationOptions, "skipInputValidation">;
+} & Pick<HttpClientOptions, "skipInputValidation">;
 
 const makeValidationMiddleware =
   (route: UnknownSharedRoute, options: ExpressSharedRouterOptions): RequestHandler =>

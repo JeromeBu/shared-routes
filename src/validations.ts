@@ -1,14 +1,16 @@
 import type { ZodIssue } from "zod";
-import type { HandlerParams } from "./configureCreateHttpClient";
+import type { HandlerParams, HttpResponse } from "./configureCreateHttpClient";
 import type { UnknownSharedRoute } from "./defineRoutes";
 
-export type ValidationOptions = {
+export type HttpClientOptions = {
   /* if true, will not validate request body, query params nor headers */
   skipInputValidation?: boolean;
   /* if true, will not validate response body */
   skipResponseValidation?: boolean;
   /* list of response status codes for which validation will be skipped */
   skipResponseValidationForStatuses?: number[];
+  /* callback called on each response, useful for logging or debugging, this is called before response validation */
+  onResponseSideEffect?: (response: HttpResponse<any, any>) => void;
 };
 
 type ExtractFromExisting<T, U extends T> = Extract<T, U>;

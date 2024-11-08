@@ -5,7 +5,7 @@ import { defineRoute, defineRoutes, listRoutes } from "../src";
 import { z } from "zod";
 import { createAxiosSharedClient } from "../src/axios";
 import { createFetchSharedClient } from "../src/fetch";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 
 describe("createAxiosSharedCaller", () => {
   it("create a caller from axios and sharedRoutes object", async () => {
@@ -67,6 +67,12 @@ describe("createAxiosSharedCaller", () => {
   });
 
   describe("Actually calling an endpoint", () => {
+    let sideEffects: any[] = [];
+
+    beforeEach(() => {
+      sideEffects = [];
+    });
+
     // WARNING : This test uses an actual placeholder api (which might not always be available...)
     const todoSchema = z.object({
       userId: z.number(),
@@ -79,7 +85,10 @@ describe("createAxiosSharedCaller", () => {
       getByTodoById: defineRoute({
         method: "get",
         url: "https://jsonplaceholder.typicode.com/todos/:todoId",
-        queryParamsSchema: z.object({ userId: z.number(), max: z.number().optional() }),
+        queryParamsSchema: z.object({
+          userId: z.number(),
+          max: z.number().optional(),
+        }),
         responses: {
           200: todoSchema,
           400: z.object({ message: z.string() }),
@@ -171,14 +180,20 @@ describe("createAxiosSharedCaller", () => {
     it.each([
       {
         name: "axios",
-        httpClient: createAxiosSharedClient(routes, axios, { skipInputValidation: true }),
+        httpClient: createAxiosSharedClient(routes, axios, {
+          skipInputValidation: true,
+          onResponseSideEffect: (response) => sideEffects.push(response),
+        }),
       },
       {
         name: "fetch",
-        httpClient: createFetchSharedClient(routes, fetch, { skipInputValidation: true }),
+        httpClient: createFetchSharedClient(routes, fetch, {
+          skipInputValidation: true,
+          onResponseSideEffect: (response) => sideEffects.push(response),
+        }),
       },
     ])(
-      "can skip the validation for input params or response, for $name",
+      "can skip the validation for input params or response, and have sideEffect function on response. For $name",
       async ({ httpClient }) => {
         const response = await httpClient.addPost({ body: { wrong: "body" } as any });
         expect(response.body).toBeTruthy();
@@ -187,6 +202,18 @@ describe("createAxiosSharedCaller", () => {
           body: { title: "My great post", body: "Some content", userId: 1 },
         });
         expect(addPostResponse.body.id).toBeTypeOf("number");
+        expect(sideEffects).toMatchObject([
+          {
+            status: response.status,
+            body: response.body,
+            headers: response.headers,
+          },
+          {
+            status: addPostResponse.status,
+            body: addPostResponse.body,
+            headers: addPostResponse.headers,
+          },
+        ]);
       },
     );
 
@@ -231,7 +258,10 @@ describe("createAxiosSharedCaller", () => {
         getTodos: defineRoute({
           method: "get",
           url: "https://jsonplaceholder.typicode.com/todos",
-          queryParamsSchema: z.object({ userId: z.number(), max: z.number().optional() }),
+          queryParamsSchema: z.object({
+            userId: z.number(),
+            max: z.number().optional(),
+          }),
           responses: { 200: z.array(z.number()) }, // this is not the correct schema, we want to trigger an error on return
         }),
         addTodo: defineRoute({
