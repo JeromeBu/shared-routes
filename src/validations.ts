@@ -12,6 +12,7 @@ export type HttpClientOptions = {
   /* callback called on each response, useful for logging or debugging, this is called before response validation */
   onResponseSideEffect?: (
     response: HttpResponse<any, any> & { durationInMs: number },
+    route: UnknownSharedRoute,
   ) => void;
 };
 

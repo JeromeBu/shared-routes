@@ -66,12 +66,15 @@ export const createFetchHandlerCreator =
     const headersAsObject = objectFromEntries((res.headers as any).entries());
 
     if (options?.onResponseSideEffect) {
-      options.onResponseSideEffect({
-        status: res.status,
-        body: processedBody,
-        headers: headersAsObject,
-        durationInMs: Date.now() - queryStartTime,
-      });
+      options.onResponseSideEffect(
+        {
+          status: res.status,
+          body: processedBody,
+          headers: headersAsObject,
+          durationInMs: Date.now() - queryStartTime,
+        },
+        route,
+      );
     }
 
     const responseBody =

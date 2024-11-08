@@ -182,14 +182,22 @@ describe("createAxiosSharedCaller", () => {
         name: "axios",
         httpClient: createAxiosSharedClient(routes, axios, {
           skipInputValidation: true,
-          onResponseSideEffect: (response) => sideEffects.push(response),
+          onResponseSideEffect: (response, route) =>
+            sideEffects.push({
+              ...response,
+              route: `${route.method.toUpperCase()} ${route.url}`,
+            }),
         }),
       },
       {
         name: "fetch",
         httpClient: createFetchSharedClient(routes, fetch, {
           skipInputValidation: true,
-          onResponseSideEffect: (response) => sideEffects.push(response),
+          onResponseSideEffect: (response, route) =>
+            sideEffects.push({
+              ...response,
+              route: `${route.method.toUpperCase()} ${route.url}`,
+            }),
         }),
       },
     ])(
@@ -208,12 +216,14 @@ describe("createAxiosSharedCaller", () => {
             body: response.body,
             headers: response.headers,
             durationInMs: expect.any(Number),
+            route: `POST ${routes.addPost.url}`,
           },
           {
             status: addPostResponse.status,
             body: addPostResponse.body,
             headers: addPostResponse.headers,
             durationInMs: expect.any(Number),
+            route: `POST ${routes.addPost.url}`,
           },
         ]);
       },

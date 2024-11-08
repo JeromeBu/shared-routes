@@ -42,12 +42,15 @@ export const createAxiosHandlerCreator =
     });
 
     if (options?.onResponseSideEffect) {
-      options.onResponseSideEffect({
-        status,
-        body: data,
-        headers: rest.headers,
-        durationInMs: Date.now() - queryStartTime,
-      });
+      options.onResponseSideEffect(
+        {
+          status,
+          body: data,
+          headers: rest.headers,
+          durationInMs: Date.now() - queryStartTime,
+        },
+        route,
+      );
     }
 
     const responseBody =
