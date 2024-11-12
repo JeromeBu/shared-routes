@@ -1,7 +1,7 @@
 import type { HttpResponse, UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
 import { ResponseType } from "../defineRoutes";
-import { queryParamsToString } from "./queryParamsToString";
+import { convertToFormData } from "./convertToFormData";
 import {
   HttpClientOptions,
   validateInputParams,
@@ -22,6 +22,23 @@ type Fetch = typeof fetch;
 
 type FetchConfig = RequestInit & { baseURL?: Url } & HttpClientOptions;
 
+export const makeBodyToSend = (
+  body: Record<string, any> | undefined,
+  contentType: string | undefined,
+): string | undefined => {
+  if (!body || Object.keys(body).length === 0) {
+    return undefined;
+  }
+
+  switch (contentType) {
+    case "application/x-www-form-urlencoded":
+      return convertToFormData(body);
+    case "application/json":
+    default:
+      return JSON.stringify(body);
+  }
+};
+
 export const createFetchHandlerCreator =
   <SharedRoutes extends Record<string, UnknownSharedRoute>>(
     fetch: Fetch,
@@ -35,14 +52,23 @@ export const createFetchHandlerCreator =
       ? params
       : validateInputParams(route, params as any, "fetch", { withIssuesInMessage: true });
 
-    const bodyAsString = JSON.stringify(body);
-
     const stringQueryParams =
       queryParams && Object.keys(queryParams).length > 0
-        ? "?" + queryParamsToString(queryParams as any)
+        ? "?" + convertToFormData(queryParams as any)
         : "";
 
     const { baseURL, ...defaultInit } = options;
+
+    const headersToSend = {
+      "Content-Type": "application/json",
+      ...defaultInit?.headers,
+      ...(headers ?? {}),
+    };
+
+    const bodyAsString = makeBodyToSend(
+      body as Record<string, any>,
+      headersToSend["Content-Type"],
+    );
 
     const queryStartTime = Date.now();
     const res = await fetch(
@@ -53,11 +79,7 @@ export const createFetchHandlerCreator =
         ...(defaultInit as any),
         method: route.method,
         ...(bodyAsString !== "{}" ? { body: bodyAsString } : {}),
-        headers: {
-          "Content-Type": "application/json",
-          ...defaultInit?.headers,
-          ...(headers ?? {}),
-        },
+        headers: headersToSend,
       },
     );
 
