@@ -11,14 +11,11 @@ export type ResponsesToHttpResponse<Responses extends UnknownResponses> = ValueO
   { [K in keyof Responses & number]: HttpResponse<K, z.infer<Responses[K]>> }
 >;
 
-export type ResponseType = "json" | "arrayBuffer" | "blob" | "text";
-
 type OptionalFields<RequestBody, Query, Responses extends UnknownResponses, Headers> = {
   requestBodySchema?: z.Schema<RequestBody>;
   queryParamsSchema?: z.Schema<Query>;
   responses?: Responses;
   headersSchema?: z.Schema<Headers>;
-  responseType?: ResponseType;
 };
 
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
@@ -73,7 +70,6 @@ export const defineRoute = <
   responses: { 201: z.void().or(z.string().max(0)) } as any, // as some framework return "" instead of void (like express)
   headersSchema: z.object({}) as any,
   ...route,
-  responseType: route.responseType ?? "json",
 });
 
 const verifyRoutesUniqAndListRoutes = <T extends Record<string, UnknownSharedRoute>>(

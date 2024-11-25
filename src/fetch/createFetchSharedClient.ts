@@ -1,6 +1,5 @@
 import type { HttpResponse, UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
-import { ResponseType } from "../defineRoutes";
 import { convertToFormData } from "./convertToFormData";
 import {
   HttpClientOptions,
@@ -83,9 +82,8 @@ export const createFetchHandlerCreator =
       },
     );
 
-    const processedBody = await responseTypeToResponseBody(res, route.responseType);
-
     const headersAsObject = objectFromEntries((res.headers as any).entries());
+    const processedBody = await responseTypeToResponseBody(res);
 
     if (options?.onResponseSideEffect) {
       options.onResponseSideEffect({
@@ -124,21 +122,44 @@ export const createFetchHandlerCreator =
     };
   };
 
-const responseTypeToResponseBody = (res: Response, responseType: ResponseType) => {
-  switch (responseType) {
-    case "json":
-      return res.json();
-    case "text":
-      return res.text();
-    case "blob":
-      return res.blob();
-    case "arrayBuffer":
-      return res.arrayBuffer();
-    default: {
-      const exhaustiveCheck: never = responseType;
-      return exhaustiveCheck;
-    }
+const responseTypeToResponseBody = (res: Response) => {
+  const contentType = res.headers.get("content-type")?.toLowerCase() || "";
+
+  if (
+    contentType.includes("application/json") ||
+    contentType.includes("application/ld+json")
+  ) {
+    return res.json();
   }
+
+  // Binary/blob types
+  if (
+    contentType.includes("image/") ||
+    contentType.includes("audio/") ||
+    contentType.includes("video/") ||
+    contentType.includes("application/pdf") ||
+    contentType.includes("application/zip") ||
+    contentType.includes("application/octet-stream") ||
+    contentType.includes("application/vnd.")
+  ) {
+    return res.blob();
+  }
+
+  // Form data
+  if (contentType.includes("multipart/form-data")) {
+    return res.formData();
+  }
+
+  // ArrayBuffer for binary data that needs processing
+  if (
+    contentType.includes("application/java-archive") ||
+    contentType.includes("application/x-shockwave-flash")
+  ) {
+    return res.arrayBuffer();
+  }
+
+  // Default to text for everything else (html, plain text, xml, css, etc)
+  return res.text();
 };
 
 export const createFetchSharedClient = <
