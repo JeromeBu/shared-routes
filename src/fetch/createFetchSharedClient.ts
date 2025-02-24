@@ -76,7 +76,7 @@ export const createFetchHandlerCreator =
         stringQueryParams,
       {
         ...(defaultInit as any),
-        method: route.method,
+        method: route.method.toUpperCase(),
         ...(bodyAsString !== "{}" ? { body: bodyAsString } : {}),
         headers: headersToSend,
       },

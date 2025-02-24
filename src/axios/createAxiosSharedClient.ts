@@ -22,7 +22,7 @@ export const createAxiosHandlerCreator =
 
     const queryStartTime = Date.now();
     const { data, status, ...rest } = await axios.request({
-      method: route.method,
+      method: route.method.toUpperCase(),
       url: replaceParamsInUrl(route.url, urlParams as Url),
       data: body,
       params: queryParams,
