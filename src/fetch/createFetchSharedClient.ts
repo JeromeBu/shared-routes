@@ -41,21 +41,38 @@ export const createFetchHandlerCreator =
 
     const { baseURL, ...defaultInit } = options;
 
-    const res = await fetch(
+    const url =
       (baseURL ? baseURL : "") +
-        replaceParamsInUrl(route.url, urlParams as Url) +
-        stringQueryParams,
-      {
-        ...(defaultInit as any),
-        method: route.method,
-        ...(bodyAsString !== "{}" ? { body: bodyAsString } : {}),
-        headers: {
-          "Content-Type": "application/json",
-          ...defaultInit?.headers,
-          ...(headers ?? {}),
-        },
+      replaceParamsInUrl(route.url, urlParams as Url) +
+      stringQueryParams;
+    // const request = new Request(url,
+    //   {
+    //     ...(defaultInit as any),
+    //     method: route.method,
+    //     ...(bodyAsString !== "{}" ? { body: bodyAsString } : {}),
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       ...defaultInit?.headers,
+    //       ...(headers ?? {}),
+    //     },
+    //   });
+
+    console.log("Headers envoyés :", {
+      "Content-Type": "application/json",
+      ...defaultInit?.headers,
+      ...(headers ?? {}),
+    });
+
+    const res = await fetch(url, {
+      ...(defaultInit as any),
+      method: route.method,
+      ...(bodyAsString !== "{}" ? { body: bodyAsString } : {}),
+      headers: {
+        "Content-Type": "application/json",
+        ...defaultInit?.headers,
+        ...(headers ?? {}),
       },
-    );
+    });
 
     const processedBody = await responseTypeToResponseBody(res, route.responseType);
 

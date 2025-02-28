@@ -65,6 +65,37 @@ describe("createAxiosSharedCaller", () => {
     };
   });
 
+  it("keep content-type header if defined", async () => {
+    const bookSchema = z.string();
+    const withContentTypeSchema = z.object({
+      "Content-Type": z.literal("application/x-www-form-urlencoded"),
+    });
+
+    const routes = defineRoutes({
+      addPost: defineRoute({
+        method: "post",
+        url: "https://jsonplaceholder.typicode.com/posts",
+        requestBodySchema: bookSchema,
+        headersSchema: withContentTypeSchema,
+        responses: { 201: z.object({ id: z.number() }) },
+      }),
+    });
+
+    const fetchsSharedCaller = createFetchSharedClient(routes, fetch);
+
+    const response = await fetchsSharedCaller.addPost({
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        title: "password",
+        author: "",
+      }).toString(),
+    });
+
+    console.log({ response });
+  });
+
   describe.skip("Actually calling an endpoint", () => {
     // WARNING : This test uses an actual placeholder api (which might not always be available...)
     const todoSchema = z.object({
