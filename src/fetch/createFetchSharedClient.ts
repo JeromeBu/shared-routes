@@ -19,7 +19,7 @@ const objectFromEntries = (
 
 type Fetch = typeof fetch;
 
-type FetchConfig = RequestInit & { baseURL?: Url } & HttpClientOptions;
+type FetchConfig = RequestInit & { baseURL?: Url; timeout?: number } & HttpClientOptions;
 
 export const makeBodyToSend = (
   body: Record<string, any> | undefined,
@@ -36,6 +36,16 @@ export const makeBodyToSend = (
     default:
       return JSON.stringify(body);
   }
+};
+
+const getTimeoutUtils = (timeoutDurationMs: number | undefined) => {
+  if (!timeoutDurationMs) return { cleanup: () => {} };
+
+  const controller = new AbortController();
+  const { signal } = controller;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutDurationMs);
+
+  return { cleanup: () => clearTimeout(timeoutId), signal };
 };
 
 export const createFetchHandlerCreator =
@@ -56,7 +66,7 @@ export const createFetchHandlerCreator =
         ? "?" + convertToFormData(queryParams as any)
         : "";
 
-    const { baseURL, ...defaultInit } = options;
+    const { baseURL, timeout, ...defaultInit } = options;
 
     const headersToSend = {
       "Content-Type": "application/json",
@@ -70,17 +80,20 @@ export const createFetchHandlerCreator =
     );
 
     const queryStartTime = Date.now();
+    const { signal, cleanup } = getTimeoutUtils(timeout);
     const res = await fetch(
       (baseURL ? baseURL : "") +
         replaceParamsInUrl(route.url, urlParams as Url) +
         stringQueryParams,
       {
+        signal,
         ...(defaultInit as any),
         method: route.method.toUpperCase(),
         ...(bodyAsString !== "{}" ? { body: bodyAsString } : {}),
         headers: headersToSend,
       },
     );
+    cleanup();
 
     const headersAsObject = objectFromEntries((res.headers as any).entries());
     const processedBody = await responseTypeToResponseBody(res);
