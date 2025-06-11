@@ -6,8 +6,9 @@ import { z } from "zod";
 import { createAxiosSharedClient } from "../src/axios";
 import { createFetchSharedClient } from "../src/fetch";
 import { describe, it, expect, beforeEach } from "vitest";
+import { HttpClientOptions } from "../src/validations";
 
-describe("createAxiosSharedCaller", () => {
+describe("createSharedCaller", () => {
   it("create a caller from axios and sharedRoutes object", async () => {
     const bookSchema = z.object({ title: z.string(), author: z.string() });
     const withAuthorizationSchema = z.object({ authorization: z.string() });
@@ -116,6 +117,72 @@ describe("createAxiosSharedCaller", () => {
           208: z.object({ id: z.number() }),
         },
       }),
+    });
+
+    const makeOnResponseSideEffect = (): {
+      calledWith: any[];
+      onResponseSideEffect: HttpClientOptions["onResponseSideEffect"];
+    } => {
+      const calledWith: any[] = [];
+      return {
+        calledWith,
+        onResponseSideEffect: (params) => {
+          calledWith.push(params);
+        },
+      };
+    };
+
+    it("when the endpoint is timed out, it still runs the side effect (axios)", async () => {
+      const { calledWith, onResponseSideEffect } = makeOnResponseSideEffect();
+      const httpClient = createAxiosSharedClient(routes, axios.create({ timeout: 1 }), {
+        onResponseSideEffect,
+      });
+      await expect(
+        httpClient.getByTodoById({
+          urlParams: { todoId: "3" },
+          queryParams: { userId: 1, max: undefined },
+        }),
+      ).rejects.toThrow("timeout of 1ms exceeded");
+      expect(calledWith).toHaveLength(1);
+      expect(calledWith[0]).toMatchObject({
+        durationInMs: expect.any(Number),
+        input: {
+          queryParams: { userId: 1 },
+          urlParams: { todoId: "3" },
+        },
+        response: {
+          status: null,
+          body: "timeout of 1ms exceeded",
+          headers: {},
+        },
+      });
+    });
+
+    it("when the endpoint is timed out, it still runs the side effect (fetch)", async () => {
+      const { calledWith, onResponseSideEffect } = makeOnResponseSideEffect();
+      const httpClient = createFetchSharedClient(routes, fetch, {
+        timeout: 1,
+        onResponseSideEffect,
+      });
+      await expect(
+        httpClient.getByTodoById({
+          urlParams: { todoId: "3" },
+          queryParams: { userId: 1, max: undefined },
+        }),
+      ).rejects.toThrow("timeout of 1ms exceeded");
+      expect(calledWith).toHaveLength(1);
+      expect(calledWith[0]).toMatchObject({
+        durationInMs: expect.any(Number),
+        input: {
+          queryParams: { userId: 1 },
+          urlParams: { todoId: "3" },
+        },
+        response: {
+          status: null,
+          body: "timeout of 1ms exceeded",
+          headers: {},
+        },
+      });
     });
 
     it.each([

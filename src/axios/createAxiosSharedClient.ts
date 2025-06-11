@@ -21,16 +21,37 @@ export const createAxiosHandlerCreator =
       : validateInputParams(route, params as any, "axios", { withIssuesInMessage: true });
 
     const queryStartTime = Date.now();
-    const { data, status, ...rest } = await axios.request({
-      method: route.method.toUpperCase(),
-      url: replaceParamsInUrl(route.url, urlParams as Url),
-      data: body,
-      params: queryParams,
-      headers: {
-        ...axios.defaults.headers,
-        ...(headers ?? ({} as any)),
-      },
-    });
+
+    const { data, status, ...rest } = await axios
+      .request({
+        method: route.method.toUpperCase(),
+        url: replaceParamsInUrl(route.url, urlParams as Url),
+        data: body,
+        params: queryParams,
+        headers: {
+          ...axios.defaults.headers,
+          ...(headers ?? ({} as any)),
+        },
+      })
+      .catch((e) => {
+        if (options?.onResponseSideEffect) {
+          options.onResponseSideEffect({
+            durationInMs: Date.now() - queryStartTime,
+            response: {
+              status: null,
+              body: e?.message,
+              headers: {},
+            },
+            route,
+            input: {
+              body,
+              queryParams,
+              urlParams,
+            },
+          });
+        }
+        throw e;
+      });
 
     if (options?.onResponseSideEffect) {
       options.onResponseSideEffect({

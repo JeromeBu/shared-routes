@@ -43,7 +43,10 @@ const getTimeoutUtils = (timeoutDurationMs: number | undefined) => {
 
   const controller = new AbortController();
   const { signal } = controller;
-  const timeoutId = setTimeout(() => controller.abort(), timeoutDurationMs);
+  const timeoutId = setTimeout(
+    () => controller.abort(new Error(`timeout of ${timeoutDurationMs}ms exceeded`)),
+    timeoutDurationMs,
+  );
 
   return { cleanup: () => clearTimeout(timeoutId), signal };
 };
@@ -92,7 +95,25 @@ export const createFetchHandlerCreator =
         ...(bodyAsString !== "{}" ? { body: bodyAsString } : {}),
         headers: headersToSend,
       },
-    );
+    ).catch((e) => {
+      if (options?.onResponseSideEffect) {
+        options.onResponseSideEffect({
+          response: {
+            status: null,
+            body: e.message,
+            headers: {},
+          },
+          durationInMs: Date.now() - queryStartTime,
+          route,
+          input: {
+            body,
+            queryParams,
+            urlParams,
+          },
+        });
+      }
+      throw e;
+    });
     cleanup();
 
     const headersAsObject = objectFromEntries((res.headers as any).entries());
