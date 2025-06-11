@@ -1,7 +1,8 @@
 import { defineRoute, defineRoutes, listRoutes } from "../src";
 import { createExpressSharedRouter } from "../src/express";
-import { z, type ZodError } from "zod";
+import { z } from "zod";
 import type { ExpressSharedRouterOptions } from "../src/express/createExpressSharedRouter";
+import { StandardSchemaV1 } from "../src/standardSchemaUtils";
 import { createSupertestSharedClient } from "../src/supertest/createSupertestSharedClient";
 import supertest from "supertest";
 import express from "express";
@@ -222,9 +223,9 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
       const calledWith: any[] = [];
       const app = createExempleApp({
         expressSharedRouterOptions: {
-          onInputValidationError: (zodError: ZodError) => {
-            calledWith.push(zodError);
-            return zodError;
+          onInputValidationError: (error: StandardSchemaV1.FailureResult) => {
+            calledWith.push(error);
+            return error;
           },
         },
       });
@@ -243,38 +244,35 @@ describe("createExpressSharedRouter and createSupertestSharedCaller", () => {
       });
       expect(getAllBooksResponse.status).toBe(400);
       expect(calledWith).toHaveLength(1);
-      expect(calledWith[0].message).toEqual(
-        JSON.stringify(
-          [
-            {
-              "code": "invalid_type",
-              "expected": "number",
-              "received": "string",
-              "path": ["max"],
-              "message": "Expected number, received string",
-            },
-            {
-              "code": "invalid_type",
-              "expected": "array",
-              "received": "undefined",
-              "path": ["startWith"],
-              "message": "Required",
-            },
-          ],
-          null,
-          2,
-        ),
+      expect(calledWith[0].message).toBe(
+        "Shared-route schema 'queryParamsSchema' was not respected in adapter 'express'.\nRoute: GET /books",
       );
+      expect(calledWith[0].issues).toEqual([
+        {
+          "code": "invalid_type",
+          "expected": "number",
+          "received": "string",
+          "path": ["max"],
+          "message": "Expected number, received string",
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["startWith"],
+          "message": "Required",
+        },
+      ]);
     });
 
     it("supports a function that edits the error to execute code after input validation error", async () => {
       const app = createExempleApp({
         expressSharedRouterOptions: {
-          onInputValidationError: (zodError: ZodError, route) => ({
+          onInputValidationError: (error: StandardSchemaV1.FailureResult, route) => ({
             route: `${route.method.toUpperCase()} ${route.url}`,
-            myCustomMessage: `This is a different message, with ${zodError.issues.length} issues`,
-            myCustomIssues: zodError.issues.map(
-              (issue) => issue.path.join(".") + " : " + issue.message,
+            myCustomMessage: `This is a different message, with ${error.issues.length} issues`,
+            myCustomIssues: error.issues.map(({ path, message }) =>
+              path ? path.join(".") + " : " + message : message,
             ),
           }),
         },

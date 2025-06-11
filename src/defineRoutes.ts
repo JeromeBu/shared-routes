@@ -1,21 +1,27 @@
-import { z, ZodVoid } from "zod";
+import { z } from "zod";
 import { HttpResponse } from "./configureCreateHttpClient";
 import type { Url } from "./pathParameters";
+import { StandardSchemaV1 } from "./standardSchemaUtils";
 
-export type UnknownResponses = { [K: number]: z.ZodSchema<unknown> };
+export type UnknownResponses = { [K: number]: StandardSchemaV1<unknown> };
 
 export type ValueOf<T> = T[keyof T];
 export type ValueOfIndexNumber<T extends Record<number, unknown>> = T[keyof T & number];
 
 export type ResponsesToHttpResponse<Responses extends UnknownResponses> = ValueOf<
-  { [K in keyof Responses & number]: HttpResponse<K, z.infer<Responses[K]>> }
+  {
+    [K in keyof Responses & number]: HttpResponse<
+      K,
+      StandardSchemaV1.Infer<Responses[K]>
+    >;
+  }
 >;
 
 type OptionalFields<RequestBody, Query, Responses extends UnknownResponses, Headers> = {
-  requestBodySchema?: z.Schema<RequestBody>;
-  queryParamsSchema?: z.Schema<Query>;
+  requestBodySchema?: StandardSchemaV1<RequestBody>;
+  queryParamsSchema?: StandardSchemaV1<Query>;
   responses?: Responses;
-  headersSchema?: z.Schema<Headers>;
+  headersSchema?: StandardSchemaV1<Headers>;
 };
 
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
@@ -60,7 +66,7 @@ export const defineRoute = <
   U extends Url,
   RequestBody = void,
   Query = void,
-  Responses extends UnknownResponses = { 201: ZodVoid },
+  Responses extends UnknownResponses = { 201: StandardSchemaV1<void> },
   Headers = void,
 >(
   route: SharedRouteWithOptional<U, RequestBody, Query, Responses, Headers>,

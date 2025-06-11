@@ -1,6 +1,6 @@
-import type { ZodIssue } from "zod";
 import type { HandlerParams, HttpResponse } from "./configureCreateHttpClient";
 import type { UnknownSharedRoute } from "./defineRoutes";
+import { StandardSchemaV1, standardValidate } from "./standardSchemaUtils";
 
 export type HttpClientOptions = {
   /* if true, will not validate request body, query params nor headers */
@@ -28,39 +28,51 @@ type CheckedSchema = ExtractFromExisting<
   "queryParamsSchema" | "requestBodySchema" | "headersSchema" | "responses"
 >;
 
-const explicitError = ({
-  route,
-  error,
-  adapterName,
-  checkedSchema,
-  statusCode,
-  withIssuesInMessage,
-}: {
-  route: UnknownSharedRoute;
-  error: unknown;
-  adapterName: string;
-  checkedSchema: CheckedSchema;
-  withIssuesInMessage: boolean;
-  statusCode?: number;
-}): Error => {
-  const newError = new Error(
-    [
-      `Shared-route schema '${checkedSchema}' was not respected in adapter '${adapterName}'.`,
-      checkedSchema === "responses" &&
-        `Received status: ${statusCode}. Handled statuses: ${Object.keys(
-          route.responses,
-        ).join(", ")}.`,
-      `Route: ${route.method.toUpperCase()} ${route.url}`,
-      ...(withIssuesInMessage && (error as any)?.issues?.length
-        ? ["Issues: " + issuesToString((error as any)?.issues)]
-        : []),
-    ]
-      .filter(Boolean)
-      .join("\n"),
-  );
-  (newError as any).cause = error;
-  return newError;
-};
+const makeExplicitError =
+  ({
+    route,
+    adapterName,
+    checkedSchema,
+    statusCode,
+    withIssuesInMessage,
+  }: {
+    route: UnknownSharedRoute;
+    adapterName: string;
+    checkedSchema: CheckedSchema;
+    withIssuesInMessage: boolean;
+    statusCode?: number;
+  }) =>
+  ({
+    message,
+    issues = [],
+  }:
+    | {
+        message: string;
+        issues?: ReadonlyArray<StandardSchemaV1.Issue>;
+      }
+    | {
+        issues: ReadonlyArray<StandardSchemaV1.Issue>;
+        message?: string;
+      }): Error => {
+    const error = new Error(
+      [
+        `Shared-route schema '${checkedSchema}' was not respected in adapter '${adapterName}'.`,
+        checkedSchema === "responses" &&
+          `Received status: ${statusCode}. Handled statuses: ${Object.keys(
+            route.responses,
+          ).join(", ")}.`,
+        `Route: ${route.method.toUpperCase()} ${route.url}`,
+        ...(message ? [`Message: ${message}`] : []),
+        ...(withIssuesInMessage && issues.length
+          ? ["Issues: " + issuesToString(issues)]
+          : []),
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+    (error as any).issues = issues;
+    return error;
+  };
 
 export const validateSchemaWithExplicitError = <R extends UnknownSharedRoute>({
   checkedSchema,
@@ -80,25 +92,33 @@ export const validateSchemaWithExplicitError = <R extends UnknownSharedRoute>({
   responseStatus?: CheckedSchema extends "responses" ? keyof R["responses"] : never;
   withIssuesInMessage?: boolean;
 }) => {
-  try {
-    if (checkedSchema === "responses") {
-      if (!responseStatus)
-        throw new Error("a response status is required when validating responses");
-      const schema = route[checkedSchema][responseStatus];
-      if (!schema) throw new Error("No schema found for this status.");
-      return schema.parse(params);
-    }
-    return route[checkedSchema].parse(params);
-  } catch (error) {
+  const explicitError = makeExplicitError({
+    route,
+    adapterName,
+    checkedSchema,
+    statusCode: responseStatus,
+    withIssuesInMessage,
+  });
+
+  if (checkedSchema === "responses") {
+    if (!responseStatus)
+      throw explicitError({
+        message: "a response status is required when validating responses",
+      });
+    const schema = route[checkedSchema][responseStatus];
+    if (!schema) throw explicitError({ message: "No schema found for this status." });
+    const result = standardValidate(schema, params);
+    if (!result.issues) return result.value;
     throw explicitError({
-      route,
-      error,
-      adapterName,
-      checkedSchema,
-      statusCode: responseStatus,
-      withIssuesInMessage,
+      issues: result.issues,
     });
   }
+
+  const result = standardValidate(route[checkedSchema], params);
+  if (!result.issues) return result.value;
+  throw explicitError({
+    issues: result.issues,
+  });
 };
 
 export const validateInputParams = (
@@ -138,5 +158,10 @@ export const validateInputParams = (
   return { queryParams, body, headers: params.headers };
 };
 
-const issuesToString = (issues: ZodIssue[]) =>
-  issues.map(({ message, path }) => `${path.join(".")}: ${message}`).join(" | ");
+const issuesToString = (issues: ReadonlyArray<StandardSchemaV1.Issue>) =>
+  issues
+    .map(({ message, path }) => {
+      if (path) return `${path.join(".")}: ${message}`;
+      return message;
+    })
+    .join(" | ");
