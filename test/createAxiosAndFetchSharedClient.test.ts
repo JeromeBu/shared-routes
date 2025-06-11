@@ -112,7 +112,9 @@ describe("createAxiosSharedCaller", () => {
           body: z.string(),
           userId: z.number(),
         }),
-        responses: { 208: z.object({ id: z.number() }) },
+        responses: {
+          208: z.object({ id: z.number() }),
+        },
       }),
     });
 

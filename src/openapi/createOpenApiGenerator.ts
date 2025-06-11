@@ -1,8 +1,9 @@
 import { OpenAPIV3_1 as OpenAPI } from "openapi-types";
-import type { ZodFirstPartyTypeKind, ZodRawShape } from "zod";
+import { ZodFirstPartyTypeKind, ZodRawShape, ZodType } from "zod";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { keys, PathParameters, UnknownSharedRoute } from "..";
+import { StandardSchemaV1 } from "../standardSchemaUtils";
 
 type OmitFromExisting<O, K extends keyof O> = Omit<O, K>;
 
@@ -57,28 +58,34 @@ type CreateOpenApiGenerator = <
                   ExtraDocParameter<string>
                 >;
 
-            body?: z.infer<SharedRoutesByTag[Tag][R]["requestBodySchema"]> extends void
+            body?: StandardSchemaV1.Infer<
+              SharedRoutesByTag[Tag][R]["requestBodySchema"]
+            > extends void
               ? never
-              : OpenApiBody<z.infer<SharedRoutesByTag[Tag][R]["requestBodySchema"]>>;
+              : OpenApiBody<
+                  StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["requestBodySchema"]>
+                >;
 
             // prettier-ignore
-            queryParams?: z.infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]> extends void
+            queryParams?: StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]> extends void
               ? never
               : {
-                [K in keyof z.infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]>]:
-                ExtraDocParameter<z.infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]>[K]>
+                [K in keyof StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]>]:
+                ExtraDocParameter<StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]>[K]>
               };
 
             // prettier-ignore
-            headerParams?: z.infer<SharedRoutesByTag[Tag][R]["headersSchema"]> extends void
+            headerParams?: StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["headersSchema"]> extends void
               ? never
-              : {[K in keyof z.infer<SharedRoutesByTag[Tag][R]["headersSchema"]>]:
-                ExtraDocParameter<z.infer<SharedRoutesByTag[Tag][R]["headersSchema"]>[K]>}
+              : {[K in keyof StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["headersSchema"]>]:
+                ExtraDocParameter<StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["headersSchema"]>[K]>}
 
             responses: {
               [S in keyof SharedRoutesByTag[Tag][R]["responses"] &
                 number]: OpenAPI.ResponseObject &
-                WithExampleOrExamples<z.infer<SharedRoutesByTag[Tag][R]["responses"][S]>>;
+                WithExampleOrExamples<
+                  StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["responses"][S]>
+                >;
             };
           };
         };
@@ -104,6 +111,12 @@ const extractFromOpenApiBody = (
   };
 };
 
+const throwIfNotZodSchema = (schema: StandardSchemaV1<any>): z.Schema<any> => {
+  if (!(schema instanceof ZodType))
+    throw new Error("Only support Zod schemas are supported for OpenAPI generation");
+  return schema as z.Schema<any>;
+};
+
 export const createOpenApiGenerator: CreateOpenApiGenerator =
   (sharedRoutesByTag, openApiRootDoc) => (extraDataByRoute) => ({
     ...openApiRootDoc,
@@ -122,27 +135,28 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
             extraDocs?.urlParams,
           );
 
+          const queryParamsZodSchema = throwIfNotZodSchema(route.queryParamsSchema);
+          const headerZodSchema = throwIfNotZodSchema(route.headersSchema);
+
           const parameters = [
             ...(pathParams.length > 0 ? pathParams : []),
-            ...(!isShapeObjectEmpty(route.queryParamsSchema)
+            ...(!isShapeObjectEmpty(queryParamsZodSchema)
               ? zodObjectToParameters(
-                  route.queryParamsSchema,
+                  queryParamsZodSchema,
                   "query",
                   extraDocs?.queryParams,
                 )
               : []),
-            ...(!isShapeObjectEmpty(route.headersSchema)
-              ? zodObjectToParameters(
-                  route.headersSchema,
-                  "header",
-                  extraDocs?.headerParams,
-                )
+            ...(!isShapeObjectEmpty(headerZodSchema)
+              ? zodObjectToParameters(headerZodSchema, "header", extraDocs?.headerParams)
               : []),
           ];
 
           const { withRequestBodyExemple, requestBodyDocs } = extractFromOpenApiBody(
             extraDocs?.body,
           );
+
+          const requestBodySchema = throwIfNotZodSchema(route.requestBodySchema);
 
           return {
             ...acc,
@@ -157,7 +171,7 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
                   parameters,
                 }),
 
-                ...(!isShapeObjectEmpty(route.requestBodySchema) && {
+                ...(!isShapeObjectEmpty(requestBodySchema) && {
                   requestBody: {
                     required: true,
                     content: {
@@ -165,7 +179,7 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
                         ...withRequestBodyExemple,
                         schema: {
                           ...requestBodyDocs,
-                          ...zodToOpenApi(route.requestBodySchema),
+                          ...zodToOpenApi(requestBodySchema),
                         },
                       },
                     },
@@ -173,7 +187,8 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
                 }),
 
                 responses: keys(route.responses).reduce((acc, status) => {
-                  const responseSchema = zodToOpenApi(route.responses[status]);
+                  const responseZodSchema = throwIfNotZodSchema(route.responses[status]);
+                  const responseSchema = zodToOpenApi(responseZodSchema);
                   const { example, examples, ...responseDoc } =
                     extraDocs?.responses?.[status] ?? {};
 
@@ -234,7 +249,7 @@ const extractFromUrl = (
   };
 };
 
-const zodToOpenApi = (schema: Parameters<typeof zodToJsonSchema>[0]) => {
+const zodToOpenApi = (schema: ZodType<any>) => {
   const { $schema, additionalProperties, ...rest } = zodToJsonSchema(schema, {
     $refStrategy: "none",
   }) as any;

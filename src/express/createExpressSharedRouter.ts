@@ -1,13 +1,13 @@
 import type { IRoute, RequestHandler, Router } from "express";
 import type { PathParameters, UnknownSharedRoute } from "..";
 import { keys } from "..";
-import { z, ZodError, ZodIssue } from "zod";
+import { StandardSchemaV1 } from "../standardSchemaUtils";
 import { HttpClientOptions, validateInputParams } from "../validations";
 import { ValueOfIndexNumber } from "../defineRoutes";
 
 export type ExpressSharedRouterOptions = {
   onInputValidationError?: (
-    validationResult: ZodError,
+    validationResult: StandardSchemaV1.FailureResult,
     route: UnknownSharedRoute,
   ) => unknown;
 } & Pick<HttpClientOptions, "skipInputValidation">;
@@ -28,12 +28,12 @@ const makeValidationMiddleware =
       }
       next();
     } catch (error: any) {
-      const zodError = error.cause as ZodError;
+      const schemaError = error as StandardSchemaV1.FailureResult;
       res.status(400);
 
       if (options?.onInputValidationError) {
-        const processedError = options.onInputValidationError(zodError, route);
-        if (processedError !== zodError) {
+        const processedError = options.onInputValidationError(schemaError, route);
+        if (processedError !== schemaError) {
           res.json(JSON.stringify(processedError, null, 2));
           return;
         }
@@ -42,19 +42,17 @@ const makeValidationMiddleware =
       res.json({
         status: 400,
         message: error.message,
-        issues: Array.from(new Set(zodIssuesToStrings(zodError.issues))),
+        issues: Array.from(new Set(zodIssuesToStrings(schemaError?.issues))),
       });
     }
   };
 
-const zodIssuesToStrings = (zodIssues: ZodIssue[]): string[] => {
-  return zodIssues.flatMap((zodIssue) => {
-    if (zodIssue.code === "invalid_union") {
-      return zodIssue.unionErrors.flatMap(({ issues }) => zodIssuesToStrings(issues));
-    }
-
-    const { message, path } = zodIssue;
-    return `${path.join(".")} : ${message}`;
+const zodIssuesToStrings = (
+  issues: ReadonlyArray<StandardSchemaV1.Issue> = [],
+): string[] => {
+  return issues.map((issue) => {
+    const { message, path } = issue;
+    return path ? `${path.join(".")} : ${message}` : message;
   });
 };
 
@@ -81,11 +79,11 @@ export const createExpressSharedRouter = <
     [Route in keyof SharedRoutes & string]: (
       ...handlers: RequestHandler<
         PathParameters<SharedRoutes[Route]["url"]>,
-        z.infer<ValueOfIndexNumber<SharedRoutes[Route]["responses"]>>,
-        z.infer<SharedRoutes[Route]["requestBodySchema"]>,
-        z.infer<SharedRoutes[Route]["queryParamsSchema"]> extends void
+        StandardSchemaV1.Infer<ValueOfIndexNumber<SharedRoutes[Route]["responses"]>>,
+        StandardSchemaV1.Infer<SharedRoutes[Route]["requestBodySchema"]>,
+        StandardSchemaV1.Infer<SharedRoutes[Route]["queryParamsSchema"]> extends void
           ? ParsedQs
-          : z.infer<SharedRoutes[Route]["queryParamsSchema"]>,
+          : StandardSchemaV1.Infer<SharedRoutes[Route]["queryParamsSchema"]>,
         any
       >[]
     ) => IRoute;

@@ -26,7 +26,7 @@ export const createSupertestHandlerCreator =
         supertestRequest,
         route.method,
       )(replaceParamsInUrl(route.url, urlParams))
-        .send(body)
+        .send(body as any)
         .set(headers ?? {})
         .query(queryParamsWithCorrectArrays);
 

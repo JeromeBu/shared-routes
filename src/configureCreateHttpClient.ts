@@ -1,4 +1,3 @@
-import { z } from "zod";
 import type {
   ResponsesToHttpResponse,
   SharedRoute,
@@ -12,6 +11,7 @@ import {
   keys,
   Url,
 } from "./pathParameters";
+import { StandardSchemaV1 } from "./standardSchemaUtils";
 
 type EmptyObj = Record<string, never>;
 type AnyObj = Record<string, unknown>;
@@ -25,9 +25,9 @@ export type HttpResponse<Status extends number | string | symbol, ResponseBody> 
 // prettier-ignore
 export type HandlerParams<SharedRoute extends UnknownSharedRoute> =
   (PathParameters<SharedRoute["url"]> extends EmptyObj ? AnyObj : { urlParams: PathParameters<SharedRoute["url"]>})
-  & (z.infer<SharedRoute["requestBodySchema"]> extends void ? AnyObj : { body: z.infer<SharedRoute["requestBodySchema"]> })
-  & (z.infer<SharedRoute["queryParamsSchema"]> extends void ? AnyObj : { queryParams: z.infer<SharedRoute["queryParamsSchema"]> })
-  & (z.infer<SharedRoute["headersSchema"]> extends void ? AnyObj : { headers: z.infer<SharedRoute["headersSchema"]> })
+  & (StandardSchemaV1.Infer<SharedRoute["requestBodySchema"]> extends void ? AnyObj : { body: StandardSchemaV1.Infer<SharedRoute["requestBodySchema"]> })
+  & (StandardSchemaV1.Infer<SharedRoute["queryParamsSchema"]> extends void ? AnyObj : { queryParams: StandardSchemaV1.Infer<SharedRoute["queryParamsSchema"]> })
+  & (StandardSchemaV1.Infer<SharedRoute["headersSchema"]> extends void ? AnyObj : { headers: StandardSchemaV1.Infer<SharedRoute["headersSchema"]> })
 
 export type Handler<SharedRoute extends UnknownSharedRoute> = (
   params: HandlerParams<SharedRoute> | EmptyObj,
