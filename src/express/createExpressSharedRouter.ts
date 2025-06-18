@@ -50,9 +50,15 @@ const makeValidationMiddleware =
 const zodIssuesToStrings = (
   issues: ReadonlyArray<StandardSchemaV1.Issue> = [],
 ): string[] => {
-  return issues.map((issue) => {
+  return issues.flatMap((issue) => {
+    if ("code" in issue && issue.code === "invalid_union") {
+      const failureResults: StandardSchemaV1.FailureResult[] =
+        (issue as any)?.unionErrors ?? [];
+      return failureResults.flatMap(({ issues }) => zodIssuesToStrings(issues));
+    }
+
     const { message, path } = issue;
-    return path ? `${path.join(".")} : ${message}` : message;
+    return `${path?.join(".")} : ${message}`;
   });
 };
 
