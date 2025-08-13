@@ -53,8 +53,8 @@ const zodIssuesToStrings = (
   return issues.flatMap((issue) => {
     if ("code" in issue && issue.code === "invalid_union") {
       const failureResults: StandardSchemaV1.FailureResult[] =
-        (issue as any)?.unionErrors ?? [];
-      return failureResults.flatMap(({ issues }) => zodIssuesToStrings(issues));
+      (issue as any)?.errors ?? [];
+      return failureResults.flatMap((issues) => zodIssuesToStrings(issues as any));
     }
 
     const { message, path } = issue;
