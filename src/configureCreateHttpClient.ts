@@ -5,10 +5,10 @@ import type {
   UnknownSharedRoute,
 } from "./defineRoutes";
 import {
-  PathParameters,
-  replaceParamsInUrl,
-  ReplaceParamsInUrl,
   keys,
+  PathParameters,
+  ReplaceParamsInUrl,
+  replaceParamsInUrl,
   Url,
 } from "./pathParameters";
 import { StandardSchemaV1 } from "./standardSchemaUtils";
@@ -22,7 +22,7 @@ export type HttpResponse<Status extends number | string | symbol, ResponseBody> 
   headers: Record<string, unknown>;
 };
 
-// prettier-ignore
+// biome-ignore format: better readability without formatting
 export type HandlerParams<SharedRoute extends UnknownSharedRoute> =
   (PathParameters<SharedRoute["url"]> extends EmptyObj ? AnyObj : { urlParams: PathParameters<SharedRoute["url"]>})
   & (StandardSchemaV1.Infer<SharedRoute["requestBodySchema"]> extends void ? AnyObj : { body: StandardSchemaV1.Infer<SharedRoute["requestBodySchema"]> })
@@ -35,7 +35,7 @@ export type Handler<SharedRoute extends UnknownSharedRoute> = (
 
 export type HttpClient<SharedRoutes extends Record<string, UnknownSharedRoute>> = {
   [RouteName in keyof SharedRoutes]: (
-    // prettier-ignore
+    // biome-ignore format: better readability without formatting
     ...params: [SharedRoutes[RouteName], PathParameters<SharedRoutes[RouteName]["url"]>] extends [SharedRoute<Url, void, void, UnknownResponses, void>, EmptyObj]
       ? []
       : [HandlerParams<SharedRoutes[RouteName]>]

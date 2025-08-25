@@ -1,6 +1,5 @@
 import { OpenAPIV3_1 as OpenAPI } from "openapi-types";
-import { ZodFirstPartyTypeKind, ZodRawShape, ZodType } from "zod";
-import { z } from "zod";
+import { ZodFirstPartyTypeKind, ZodRawShape, ZodType, z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { keys, PathParameters, UnknownSharedRoute } from "..";
 import { StandardSchemaV1 } from "../standardSchemaUtils";
@@ -39,59 +38,64 @@ type CreateOpenApiGenerator = <
     };
   },
 ) => (
-  extraDataByRoute: Partial<
-    {
-      [Tag in keyof SharedRoutesByTag]: {
-        [R in keyof SharedRoutesByTag[Tag]]: OmitFromExisting<
-          OpenAPI.OperationObject,
-          "parameters" | "responses" | "requestBody" | "security"
-        > & {
-          extraDocs: {
-            securitySchemeToApply?: SecuritySchemeName[];
-            urlParams?: PathParameters<SharedRoutesByTag[Tag][R]["url"]> extends Record<
-              string,
-              never
-            >
-              ? never
-              : Record<
-                  keyof PathParameters<SharedRoutesByTag[Tag][R]["url"]>,
-                  ExtraDocParameter<string>
-                >;
+  extraDataByRoute: Partial<{
+    [Tag in keyof SharedRoutesByTag]: {
+      [R in keyof SharedRoutesByTag[Tag]]: OmitFromExisting<
+        OpenAPI.OperationObject,
+        "parameters" | "responses" | "requestBody" | "security"
+      > & {
+        extraDocs: {
+          securitySchemeToApply?: SecuritySchemeName[];
+          urlParams?: PathParameters<SharedRoutesByTag[Tag][R]["url"]> extends Record<
+            string,
+            never
+          >
+            ? never
+            : Record<
+                keyof PathParameters<SharedRoutesByTag[Tag][R]["url"]>,
+                ExtraDocParameter<string>
+              >;
 
-            body?: StandardSchemaV1.Infer<
-              SharedRoutesByTag[Tag][R]["requestBodySchema"]
-            > extends void
-              ? never
-              : OpenApiBody<
-                  StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["requestBodySchema"]>
-                >;
+          body?: StandardSchemaV1.Infer<
+            SharedRoutesByTag[Tag][R]["requestBodySchema"]
+          > extends void
+            ? never
+            : OpenApiBody<
+                StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["requestBodySchema"]>
+              >;
 
-            // prettier-ignore
-            queryParams?: StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]> extends void
-              ? never
-              : {
-                [K in keyof StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]>]:
-                ExtraDocParameter<StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["queryParamsSchema"]>[K]>
+          // prettier-ignore
+          queryParams?: StandardSchemaV1.Infer<
+            SharedRoutesByTag[Tag][R]["queryParamsSchema"]
+          > extends void
+            ? never
+            : {
+                [K in keyof StandardSchemaV1.Infer<
+                  SharedRoutesByTag[Tag][R]["queryParamsSchema"]
+                >]: ExtraDocParameter<
+                  StandardSchemaV1.Infer<
+                    SharedRoutesByTag[Tag][R]["queryParamsSchema"]
+                  >[K]
+                >;
               };
 
-            // prettier-ignore
-            headerParams?: StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["headersSchema"]> extends void
+          // biome-ignore format: better readability without formatting
+          headerParams?: StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["headersSchema"]> extends void
               ? never
               : {[K in keyof StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["headersSchema"]>]:
                 ExtraDocParameter<StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["headersSchema"]>[K]>}
 
-            responses: {
-              [S in keyof SharedRoutesByTag[Tag][R]["responses"] &
-                number]: OpenAPI.ResponseObject &
-                WithExampleOrExamples<
-                  StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["responses"][S]>
-                >;
-            };
+          responses: {
+            [S in keyof SharedRoutesByTag[Tag][R]["responses"] &
+              number]: OpenAPI.ResponseObject &
+              WithExampleOrExamples<
+                StandardSchemaV1.Infer<SharedRoutesByTag[Tag][R]["responses"][S]>
+              >;
           };
         };
       };
-    }
-  >,
+    };
+  }>,
 ) => OpenAPI.Document;
 
 const extractFromOpenApiBody = (

@@ -1,7 +1,6 @@
+import type { SuperTest, Test } from "supertest";
 import type { HttpMethod, HttpResponse, UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
-
-import type { SuperTest, Test } from "supertest";
 
 const supertestRequestToCorrectHttpMethod = (
   supertestRequest: SuperTest<Test>,
@@ -12,9 +11,12 @@ export const createSupertestHandlerCreator =
   (supertestRequest: SuperTest<Test>): HandlerCreator<any> =>
   (routeName, routes, replaceParamsInUrl) => {
     const route = routes[routeName];
-    return async ({ headers, body, queryParams, urlParams } = {}): Promise<
-      HttpResponse<any, any>
-    > => {
+    return async ({
+      headers,
+      body,
+      queryParams,
+      urlParams,
+    } = {}): Promise<HttpResponse<any, any>> => {
       const queryParamsWithCorrectArrays = Object.fromEntries(
         Object.entries(queryParams ?? {}).map(([key, value]) => [
           Array.isArray(value) ? `${key}[]` : key,
