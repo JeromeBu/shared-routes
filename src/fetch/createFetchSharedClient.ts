@@ -1,11 +1,11 @@
 import type { HttpResponse, UnknownSharedRoute, Url } from "..";
 import { configureCreateHttpClient, HandlerCreator } from "..";
-import { convertToFormData } from "./convertToFormData";
 import {
   HttpClientOptions,
   validateInputParams,
   validateSchemaWithExplicitError,
 } from "../validations";
+import { convertToFormData } from "./convertToFormData";
 
 const objectFromEntries = (
   entries: Iterable<[string, string]>,
@@ -39,7 +39,12 @@ export const makeBodyToSend = (
 };
 
 const getTimeoutUtils = (timeoutDurationMs: number | undefined) => {
-  if (!timeoutDurationMs) return { cleanup: () => {} };
+  if (!timeoutDurationMs)
+    return {
+      cleanup: () => {
+        /* no-op */
+      },
+    };
 
   const controller = new AbortController();
   const { signal } = controller;

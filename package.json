@@ -14,20 +14,16 @@
     "build:esm": "rm -rf dist/esm && tsc -p tsconfig.esm.json && js2mjs dist/esm",
     "build:deno": "denoify",
     "test": "vitest",
-    "lint:check": "eslint . --ext .ts,.tsx",
-    "lint": "npm run lint:check -- --fix",
-    "_format": "prettier '**/*.{ts,tsx,json,md}'",
-    "format": "npm run _format -- --write",
-    "format:check": "npm run _format -- --list-different",
+    "lint:check": "biome lint .",
+    "lint": "biome lint --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
     "make-lib-linkable": "pnpm build:cjs && pnpm build:esm && ts-node --skipProject scripts/make-dist-linkable.ts",
     "prepare": "husky install"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix"
-    ],
-    "*.{ts,tsx,json,md}": [
-      "prettier --write"
+    "*": [
+      "biome check --write --no-errors-on-unmatched"
     ]
   },
   "husky": {
@@ -49,24 +45,20 @@
     "zod": "^3.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.2.2",
     "@types/body-parser": "^1.19.2",
     "@types/express": "^4.17.17",
     "@types/node": "^22.7.4",
     "@types/supertest": "^2.0.12",
-    "@typescript-eslint/eslint-plugin": "^8.9.0",
-    "@typescript-eslint/parser": "^6.12.0",
     "@vitest/coverage-c8": "^0.31.0",
     "axios": "^1.7.7",
     "body-parser": "^1.20.2",
     "denoify": "^1.5.1",
-    "eslint": "^9.12.0",
-    "eslint-config-prettier": "^8.3.0",
     "express": "^4.21.0",
     "husky": "^8.0.0",
     "js2mjs": "^0.3.0",
     "lint-staged": "^11.1.1",
     "openapi-types": "^12.1.0",
-    "prettier": "^2.3.2",
     "supertest": "^6.3.3",
     "ts-node": "^10.9.1",
     "typescript": "^5.6.2",
