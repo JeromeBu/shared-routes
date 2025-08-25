@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Package Manager
+
+This project uses **pnpm 10.9.x** as the package manager. The version is enforced via:
+- `packageManager` field in package.json
+- `engines` field requiring `^10.9.0`  
+- `.npmrc` with `engine-strict=true`
+
 ## Development Commands
 
 - **Build**: `pnpm build` - Builds both CJS and ESM versions
