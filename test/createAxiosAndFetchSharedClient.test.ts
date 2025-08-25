@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 
 import axios from "axios";
-import { defineRoute, defineRoutes, listRoutes } from "../src";
+import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
+import { defineRoute, defineRoutes, listRoutes } from "../src";
 import { createAxiosSharedClient } from "../src/axios";
 import { createFetchSharedClient } from "../src/fetch";
-import { describe, it, expect, beforeEach } from "vitest";
 import { HttpClientOptions } from "../src/validations";
 
 describe("createSharedCaller", () => {
@@ -226,7 +226,7 @@ describe("createSharedCaller", () => {
           [
             `Shared-route schema 'requestBodySchema' was not respected in adapter '${name}'.`,
             "Route: POST https://jsonplaceholder.typicode.com/posts",
-            "Issues: title: Required | body: Required | userId: Required",
+            "Issues: title: Invalid input: expected string, received undefined | body: Invalid input: expected string, received undefined | userId: Invalid input: expected number, received undefined",
           ].join("\n"),
         );
 
