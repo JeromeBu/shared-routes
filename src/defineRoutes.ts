@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { HttpResponse } from "./configureCreateHttpClient";
 import type { Url } from "./pathParameters";
 import { StandardSchemaV1 } from "./standardSchemaUtils";
 
@@ -8,18 +7,19 @@ export type UnknownResponses = { [K: number]: StandardSchemaV1<unknown> };
 export type ValueOf<T> = T[keyof T];
 export type ValueOfIndexNumber<T extends Record<number, unknown>> = T[keyof T & number];
 
-export type ResponsesToHttpResponse<Responses extends UnknownResponses> = ValueOf<{
-  [K in keyof Responses & number]: HttpResponse<
-    K,
-    StandardSchemaV1.InferOutput<Responses[K]>
-  >;
-}>;
-
-type OptionalFields<RequestBody, Query, Responses extends UnknownResponses, Headers> = {
-  requestBodySchema?: StandardSchemaV1<RequestBody>;
-  queryParamsSchema?: StandardSchemaV1<Query>;
+type OptionalFields<
+  RequestBody,
+  QueryInput,
+  Responses extends UnknownResponses,
+  HeadersInput,
+  QueryOutput,
+  RequestBodyOutput,
+  HeadersOutput,
+> = {
+  requestBodySchema?: StandardSchemaV1<RequestBody, RequestBodyOutput>;
+  queryParamsSchema?: StandardSchemaV1<QueryInput, QueryOutput>;
   responses?: Responses;
-  headersSchema?: StandardSchemaV1<Headers>;
+  headersSchema?: StandardSchemaV1<HeadersInput, HeadersOutput>;
 };
 
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
@@ -31,19 +31,45 @@ type MethodAndUrl<U extends Url> = {
 
 type SharedRouteWithOptional<
   U extends Url,
-  RequestBody,
-  Query,
+  RequestBodyInput,
+  QueryInput,
   Responses extends UnknownResponses,
-  Headers,
-> = MethodAndUrl<U> & OptionalFields<RequestBody, Query, Responses, Headers>;
+  HeadersInput,
+  QueryOutput,
+  RequestBodyOutput,
+  HeadersOutput,
+> = MethodAndUrl<U> &
+  OptionalFields<
+    RequestBodyInput,
+    QueryInput,
+    Responses,
+    HeadersInput,
+    QueryOutput,
+    RequestBodyOutput,
+    HeadersOutput
+  >;
 
 export type SharedRoute<
   U extends Url,
-  RequestBody,
-  Query,
+  RequestBodyInput,
+  QueryInput,
   Responses extends UnknownResponses,
-  Headers,
-> = MethodAndUrl<U> & Required<OptionalFields<RequestBody, Query, Responses, Headers>>;
+  HeadersInput,
+  QueryOutput = QueryInput,
+  RequestBodyOutput = RequestBodyInput,
+  HeadersOutput = HeadersInput,
+> = MethodAndUrl<U> &
+  Required<
+    OptionalFields<
+      RequestBodyInput,
+      QueryInput,
+      Responses,
+      HeadersInput,
+      QueryOutput,
+      RequestBodyOutput,
+      HeadersOutput
+    >
+  >;
 
 export type UnknownSharedRoute = SharedRoute<
   Url,
@@ -62,13 +88,34 @@ export type UnknownSharedRouteWithUrl<U extends Url> = SharedRoute<
 
 export const defineRoute = <
   U extends Url,
-  RequestBody = void,
-  Query = void,
+  RequestBodyInput = void,
+  QueryInput = void,
   Responses extends UnknownResponses = { 201: StandardSchemaV1<void> },
-  Headers = void,
+  HeadersInput = void,
+  QueryOutput = QueryInput,
+  RequestBodyOutput = RequestBodyInput,
+  HeadersOutput = HeadersInput,
 >(
-  route: SharedRouteWithOptional<U, RequestBody, Query, Responses, Headers>,
-): SharedRoute<U, RequestBody, Query, Responses, Headers> => ({
+  route: SharedRouteWithOptional<
+    U,
+    RequestBodyInput,
+    QueryInput,
+    Responses,
+    HeadersInput,
+    QueryOutput,
+    RequestBodyOutput,
+    HeadersOutput
+  >,
+): SharedRoute<
+  U,
+  RequestBodyInput,
+  QueryInput,
+  Responses,
+  HeadersInput,
+  QueryOutput,
+  RequestBodyOutput,
+  HeadersOutput
+> => ({
   requestBodySchema: z.object({}).strict() as any,
   queryParamsSchema: z.object({}).strict() as any,
   responses: { 201: z.void().or(z.string().max(0)) } as any, // as some framework return "" instead of void (like express)

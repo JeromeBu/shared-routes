@@ -1,8 +1,8 @@
-import type {
-  ResponsesToHttpResponse,
+import {
   SharedRoute,
   UnknownResponses,
   UnknownSharedRoute,
+  ValueOf,
 } from "./defineRoutes";
 import {
   keys,
@@ -22,15 +22,29 @@ export type HttpResponse<Status extends number | string | symbol, ResponseBody> 
   headers: Record<string, unknown>;
 };
 
+type ResponsesToHttpResponse<Responses extends UnknownResponses> = ValueOf<{
+  [K in keyof Responses & number]: HttpResponse<
+    K,
+    StandardSchemaV1.InferOutput<Responses[K]>
+  >;
+}>;
+
 // biome-ignore format: better readability without formatting
-export type HandlerParams<SharedRoute extends UnknownSharedRoute> =
+export type HandlerOutputParams<SharedRoute extends UnknownSharedRoute> =
   (PathParameters<SharedRoute["url"]> extends EmptyObj ? AnyObj : { urlParams: PathParameters<SharedRoute["url"]>})
-  & (StandardSchemaV1.Infer<SharedRoute["requestBodySchema"]> extends void ? AnyObj : { body: StandardSchemaV1.Infer<SharedRoute["requestBodySchema"]> })
-  & (StandardSchemaV1.Infer<SharedRoute["queryParamsSchema"]> extends void ? AnyObj : { queryParams: StandardSchemaV1.Infer<SharedRoute["queryParamsSchema"]> })
-  & (StandardSchemaV1.Infer<SharedRoute["headersSchema"]> extends void ? AnyObj : { headers: StandardSchemaV1.Infer<SharedRoute["headersSchema"]> })
+  & (StandardSchemaV1.InferOutput<SharedRoute["requestBodySchema"]> extends void ? AnyObj : { body: StandardSchemaV1.InferOutput<SharedRoute["requestBodySchema"]> })
+  & (StandardSchemaV1.InferOutput<SharedRoute["queryParamsSchema"]> extends void ? AnyObj : { queryParams: StandardSchemaV1.InferOutput<SharedRoute["queryParamsSchema"]> })
+  & (StandardSchemaV1.InferOutput<SharedRoute["headersSchema"]> extends void ? AnyObj : { headers: StandardSchemaV1.InferOutput<SharedRoute["headersSchema"]> })
+
+// biome-ignore format: better readability without formatting
+export type HandlerInputParams<SharedRoute extends UnknownSharedRoute> =
+  (PathParameters<SharedRoute["url"]> extends EmptyObj ? AnyObj : { urlParams: PathParameters<SharedRoute["url"]>})
+  & (StandardSchemaV1.InferInput<SharedRoute["requestBodySchema"]> extends void ? AnyObj : { body: StandardSchemaV1.InferInput<SharedRoute["requestBodySchema"]> })
+  & (StandardSchemaV1.InferInput<SharedRoute["queryParamsSchema"]> extends void ? AnyObj : { queryParams: StandardSchemaV1.InferInput<SharedRoute["queryParamsSchema"]> })
+  & (StandardSchemaV1.InferInput<SharedRoute["headersSchema"]> extends void ? AnyObj : { headers: StandardSchemaV1.InferOutput<SharedRoute["headersSchema"]> })
 
 export type Handler<SharedRoute extends UnknownSharedRoute> = (
-  params: HandlerParams<SharedRoute> | EmptyObj,
+  params: HandlerOutputParams<SharedRoute> | EmptyObj,
 ) => Promise<ResponsesToHttpResponse<SharedRoute["responses"]>>;
 
 export type HttpClient<SharedRoutes extends Record<string, UnknownSharedRoute>> = {
@@ -38,7 +52,7 @@ export type HttpClient<SharedRoutes extends Record<string, UnknownSharedRoute>> 
     // biome-ignore format: better readability without formatting
     ...params: [SharedRoutes[RouteName], PathParameters<SharedRoutes[RouteName]["url"]>] extends [SharedRoute<Url, void, void, UnknownResponses, void>, EmptyObj]
       ? []
-      : [HandlerParams<SharedRoutes[RouteName]>]
+      : [HandlerInputParams<SharedRoutes[RouteName]>]
   ) => Promise<ResponsesToHttpResponse<SharedRoutes[RouteName]["responses"]>>;
 };
 

@@ -1,9 +1,9 @@
 import type { IRoute, RequestHandler, Router } from "express";
 import type { PathParameters, UnknownSharedRoute } from "..";
 import { keys } from "..";
+import { ValueOfIndexNumber } from "../defineRoutes";
 import { StandardSchemaV1 } from "../standardSchemaUtils";
 import { HttpClientOptions, validateInputParams } from "../validations";
-import { ValueOfIndexNumber } from "../defineRoutes";
 
 export type ExpressSharedRouterOptions = {
   onInputValidationError?: (
@@ -53,7 +53,7 @@ const zodIssuesToStrings = (
   return issues.flatMap((issue) => {
     if ("code" in issue && issue.code === "invalid_union") {
       const failureResults: StandardSchemaV1.FailureResult[] =
-      (issue as any)?.errors ?? [];
+        (issue as any)?.errors ?? [];
       return failureResults.flatMap((issues) => zodIssuesToStrings(issues as any));
     }
 
@@ -85,11 +85,15 @@ export const createExpressSharedRouter = <
     [Route in keyof SharedRoutes & string]: (
       ...handlers: RequestHandler<
         PathParameters<SharedRoutes[Route]["url"]>,
-        StandardSchemaV1.Infer<ValueOfIndexNumber<SharedRoutes[Route]["responses"]>>,
-        StandardSchemaV1.Infer<SharedRoutes[Route]["requestBodySchema"]>,
-        StandardSchemaV1.Infer<SharedRoutes[Route]["queryParamsSchema"]> extends void
+        StandardSchemaV1.InferOutput<
+          ValueOfIndexNumber<SharedRoutes[Route]["responses"]>
+        >,
+        StandardSchemaV1.InferOutput<SharedRoutes[Route]["requestBodySchema"]>,
+        StandardSchemaV1.InferOutput<
+          SharedRoutes[Route]["queryParamsSchema"]
+        > extends void
           ? ParsedQs
-          : StandardSchemaV1.Infer<SharedRoutes[Route]["queryParamsSchema"]>,
+          : StandardSchemaV1.InferOutput<SharedRoutes[Route]["queryParamsSchema"]>,
         any
       >[]
     ) => IRoute;

@@ -9,6 +9,21 @@ import { createFetchSharedClient } from "../src/fetch";
 import { HttpClientOptions } from "../src/validations";
 
 describe("createSharedCaller", () => {
+  describe("coerced types", () => {
+    it("works when it should", async () => {
+      const coercedToNumberSchema = z.coerce.number<number | string>();
+      const result = coercedToNumberSchema.parse("123");
+      expect(result).toBe(123);
+    });
+
+    it("throws when not coercible", async () => {
+      const coercedToNumberSchema = z.coerce.number<number | string>();
+      expect(() => coercedToNumberSchema.parse("abc")).toThrow(
+        "Invalid input: expected number, received NaN",
+      );
+    });
+  });
+
   it("create a caller from axios and sharedRoutes object", async () => {
     const bookSchema = z.object({ title: z.string(), author: z.string() });
     const withAuthorizationSchema = z.object({ authorization: z.string() });
@@ -87,7 +102,7 @@ describe("createSharedCaller", () => {
         method: "get",
         url: "https://jsonplaceholder.typicode.com/todos/:todoId",
         queryParamsSchema: z.object({
-          userId: z.number(),
+          userId: z.coerce.number<string | number>(),
           max: z.number().optional(),
         }),
         responses: {
@@ -140,7 +155,7 @@ describe("createSharedCaller", () => {
       await expect(
         httpClient.getByTodoById({
           urlParams: { todoId: "3" },
-          queryParams: { userId: 1, max: undefined },
+          queryParams: { userId: "1", max: undefined },
         }),
       ).rejects.toThrow("timeout of 1ms exceeded");
       expect(calledWith).toHaveLength(1);
@@ -167,7 +182,7 @@ describe("createSharedCaller", () => {
       await expect(
         httpClient.getByTodoById({
           urlParams: { todoId: "3" },
-          queryParams: { userId: 1, max: undefined },
+          queryParams: { userId: "1", max: undefined },
         }),
       ).rejects.toThrow("timeout of 1ms exceeded");
       expect(calledWith).toHaveLength(1);

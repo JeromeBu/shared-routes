@@ -1,4 +1,4 @@
-import type { HandlerParams, HttpResponse } from "./configureCreateHttpClient";
+import type { HandlerOutputParams, HttpResponse } from "./configureCreateHttpClient";
 import type { UnknownSharedRoute } from "./defineRoutes";
 import { StandardSchemaV1, standardValidate } from "./standardSchemaUtils";
 
@@ -123,7 +123,7 @@ export const validateSchemaWithExplicitError = <R extends UnknownSharedRoute>({
 
 export const validateInputParams = (
   route: UnknownSharedRoute,
-  params: HandlerParams<UnknownSharedRoute>,
+  params: HandlerOutputParams<UnknownSharedRoute>,
   adapterName: string,
   options: { withIssuesInMessage: boolean } = {
     withIssuesInMessage: false,

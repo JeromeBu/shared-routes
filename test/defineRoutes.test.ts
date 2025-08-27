@@ -1,6 +1,6 @@
+import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { describe, it, expect } from "vitest";
-import { defineRoutes, defineRoute, listRoutes } from "../src";
+import { defineRoute, defineRoutes, listRoutes } from "../src";
 
 describe("Shared routes definitions", () => {
   describe("defineRoutes", () => {
@@ -15,7 +15,14 @@ describe("Shared routes definitions", () => {
           getAllBooks: defineRoute({
             method: "post",
             url: "/books",
-            responses: { 200: z.array(z.object({ id: z.string(), name: z.string() })) },
+            responses: {
+              200: z.array(
+                z.object({
+                  id: z.string(),
+                  name: z.string(),
+                }),
+              ),
+            },
           }),
         });
 
@@ -26,7 +33,7 @@ describe("Shared routes definitions", () => {
       );
     });
 
-    it("create routes with the expected types and shows list of routes", () => {
+    it("create routes with the expected types and shows list of routes", async () => {
       const routes = defineRoutes({
         addBook: defineRoute({
           method: "post",
@@ -37,11 +44,29 @@ describe("Shared routes definitions", () => {
           method: "get",
           url: "/books",
           queryParamsSchema: z.object({ lala: z.string() }),
-          responses: { 200: z.array(z.object({ id: z.string(), name: z.string() })) },
+          responses: {
+            200: z.array(
+              z.object({
+                id: z.string(),
+                name: z.string(),
+              }),
+            ),
+          },
         }),
       });
 
-      expect(() => routes.getAllBooks.requestBodySchema.parse({ yo: "lala" })).toThrow();
+      expect(
+        await routes.getAllBooks.requestBodySchema["~standard"].validate({ yo: "lala" }),
+      ).toEqual({
+        issues: [
+          {
+            code: "unrecognized_keys",
+            keys: ["yo"],
+            message: 'Unrecognized key: "yo"',
+            path: [],
+          },
+        ],
+      });
       expect(listRoutes(routes)).toEqual(["POST /books", "GET /books"]);
     });
   });

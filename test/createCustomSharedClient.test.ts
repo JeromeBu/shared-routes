@@ -1,12 +1,26 @@
+import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { describe, it, expect } from "vitest";
-import { defineRoute, defineRoutes, createCustomSharedClient } from "../src";
+import { createCustomSharedClient, defineRoute, defineRoutes } from "../src";
 
-type Book = { title: string; author: string };
-const bookSchema: z.Schema<Book> = z.object({
+type BookInput = {
+  title: string;
+  author: string;
+  numberOfPages?: number | string | undefined | null;
+};
+type Book = { title: string; author: string; numberOfPages: number };
+
+const numberOfPagesSchema: z.ZodType<number, number | string | undefined | null> =
+  z.preprocess(
+    (n) => (n === undefined || n === null ? n : 0),
+    z.coerce.number<string | number>(),
+  );
+
+const bookSchema: z.ZodType<Book, BookInput> = z.object({
   title: z.string(),
   author: z.string(),
+  numberOfPages: numberOfPagesSchema,
 });
+
 const withAuthorizationSchema = z.object({ authorization: z.string() });
 
 const myRoutes = defineRoutes({
@@ -56,7 +70,7 @@ const httpClient = createTestHttpClient();
 
 describe("createCustomSharedClient", () => {
   it("all routes work fine", async () => {
-    const myBook: Book = { title: "Harry Potter", author: "J.K. Rowling" };
+    const myBook: BookInput = { title: "Harry Potter", author: "J.K. Rowling" };
 
     const response = await httpClient.addBook({
       body: myBook,
