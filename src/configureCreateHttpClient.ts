@@ -22,7 +22,7 @@ export type HttpResponse<Status extends number | string | symbol, ResponseBody> 
   headers: Record<string, unknown>;
 };
 
-type ResponsesToHttpResponse<Responses extends UnknownResponses> = ValueOf<{
+export type ResponsesToHttpResponse<Responses extends UnknownResponses> = ValueOf<{
   [K in keyof Responses & number]: HttpResponse<
     K,
     StandardSchemaV1.InferOutput<Responses[K]>
