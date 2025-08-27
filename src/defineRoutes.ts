@@ -9,7 +9,10 @@ export type ValueOf<T> = T[keyof T];
 export type ValueOfIndexNumber<T extends Record<number, unknown>> = T[keyof T & number];
 
 export type ResponsesToHttpResponse<Responses extends UnknownResponses> = ValueOf<{
-  [K in keyof Responses & number]: HttpResponse<K, StandardSchemaV1.Infer<Responses[K]>>;
+  [K in keyof Responses & number]: HttpResponse<
+    K,
+    StandardSchemaV1.InferOutput<Responses[K]>
+  >;
 }>;
 
 type OptionalFields<RequestBody, Query, Responses extends UnknownResponses, Headers> = {
