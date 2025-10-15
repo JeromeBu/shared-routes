@@ -387,3 +387,42 @@ it("handles discriminated union with intersection in queryParams", () => {
     }),
   ).not.toThrow();
 });
+
+it("handles union and intersection in requestBody", () => {
+  const schemaA = z.object({ type: z.literal("A"), valueA: z.string() });
+  const schemaB = z.object({ type: z.literal("B"), valueB: z.number() });
+  const commonFields = z.object({ id: z.string(), timestamp: z.number() });
+
+  const routesWithComplexBody = defineRoutes({
+    createItem: defineRoute({
+      url: "/items",
+      method: "post",
+      requestBodySchema: schemaA.or(schemaB).and(commonFields),
+      responses: { 201: z.object({ success: z.boolean() }) },
+    }),
+  });
+
+  const generateComplexBodyOpenApi = createOpenApiGenerator(
+    { Items: routesWithComplexBody },
+    rootInfo,
+  );
+
+  const openApiDoc = generateComplexBodyOpenApi({
+    Items: {
+      createItem: {
+        extraDocs: {
+          responses: {
+            201: {
+              description: "Success",
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const requestBody = openApiDoc.paths!["/items"]!.post!.requestBody!;
+  expect(requestBody).toBeDefined();
+
+  expect((requestBody as any).content!["application/json"].schema).toBeDefined();
+});

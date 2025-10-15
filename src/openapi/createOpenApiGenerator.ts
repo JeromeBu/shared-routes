@@ -187,7 +187,7 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
                   parameters,
                 }),
 
-                ...(!shouldSkipParameterExtraction(requestBodySchema) && {
+                ...(!isSchemaEmpty(requestBodySchema) && {
                   requestBody: {
                     required: true,
                     content: {
@@ -317,6 +317,16 @@ const shouldSkipParameterExtraction = <T>(schema: z.Schema<T>): boolean => {
   }
 
   return true;
+};
+
+const isSchemaEmpty = <T>(schema: z.Schema<T>): boolean => {
+  const typeName = getTypeName(schema);
+  if (typeName === "object") {
+    const shape = getShape(schema);
+    return Object.keys(shape).length === 0;
+  }
+
+  return false;
 };
 
 const zodObjectToParameters = <T>(
