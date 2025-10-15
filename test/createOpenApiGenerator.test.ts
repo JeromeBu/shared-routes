@@ -350,17 +350,20 @@ it("has the expected shape", () => {
   expect(openApiJSON).toEqual(expected);
 });
 
-it("handles discriminated union with intersection in queryParams", () => {
+it("extracts query params from intersection schemas", () => {
   const routesWithComplexQuery = defineRoutes({
     getItems: defineRoute({
       url: "/items",
       method: "get",
       queryParamsSchema: z
-        .discriminatedUnion("sortBy", [
-          z.object({ sortBy: z.literal("name"), order: z.enum(["asc", "desc"]) }),
-          z.object({ sortBy: z.literal("date"), order: z.enum(["asc", "desc"]) }),
-        ])
-        .and(z.object({ limit: z.number().optional() })),
+        .object({ a: z.string() })
+        .and(
+          z.discriminatedUnion("sortBy", [
+            z.object({ sortBy: z.literal("name"), order: z.enum(["asc", "desc"]) }),
+            z.object({ sortBy: z.literal("date"), order: z.enum(["asc", "desc"]) }),
+          ]),
+        )
+        .and(z.object({ b: z.string(), limit: z.number().optional() })),
       responses: { 200: z.array(z.object({ id: z.string() })) },
     }),
   });
@@ -370,25 +373,36 @@ it("handles discriminated union with intersection in queryParams", () => {
     rootInfo,
   );
 
-  // Should not crash when generating OpenAPI
-  expect(() =>
-    generateComplexQueryOpenApi({
-      Items: {
-        getItems: {
-          extraDocs: {
-            responses: {
-              200: {
-                description: "Success",
-              },
+  const openApiDoc = generateComplexQueryOpenApi({
+    Items: {
+      getItems: {
+        extraDocs: {
+          responses: {
+            200: {
+              description: "Success",
             },
           },
         },
       },
-    }),
-  ).not.toThrow();
+    },
+  });
+
+  const parameters = openApiDoc.paths!["/items"]!.get!.parameters as any[];
+  expect(parameters).toBeDefined();
+
+  const paramNames = parameters.map((p) => p.name);
+  expect(paramNames).toContain("a");
+  expect(paramNames).toContain("b");
+  expect(paramNames).toContain("limit");
+
+  const limitParam = parameters.find((p) => p.name === "limit");
+  expect(limitParam?.required).toBe(false);
+
+  const aParam = parameters.find((p) => p.name === "a");
+  expect(aParam?.required).toBe(true);
 });
 
-it("handles union and intersection in requestBody", () => {
+it("generates proper OpenAPI structure for union and intersection in requestBody", () => {
   const schemaA = z.object({ type: z.literal("A"), valueA: z.string() });
   const schemaB = z.object({ type: z.literal("B"), valueB: z.number() });
   const commonFields = z.object({ id: z.string(), timestamp: z.number() });
@@ -424,5 +438,23 @@ it("handles union and intersection in requestBody", () => {
   const requestBody = openApiDoc.paths!["/items"]!.post!.requestBody!;
   expect(requestBody).toBeDefined();
 
-  expect((requestBody as any).content!["application/json"].schema).toBeDefined();
+  const schema = (requestBody as any).content!["application/json"].schema;
+  expect(schema).toBeDefined();
+
+  expect(schema.allOf).toBeDefined();
+  expect(schema.allOf).toHaveLength(2);
+
+  const unionPart = schema.allOf[0];
+  expect(unionPart.anyOf).toBeDefined();
+  expect(unionPart.anyOf).toHaveLength(2);
+
+  expect(unionPart.anyOf[0].properties?.type?.const).toBe("A");
+  expect(unionPart.anyOf[0].properties?.valueA).toBeDefined();
+
+  expect(unionPart.anyOf[1].properties?.type?.const).toBe("B");
+  expect(unionPart.anyOf[1].properties?.valueB).toBeDefined();
+
+  const intersectionPart = schema.allOf[1];
+  expect(intersectionPart.properties?.id).toBeDefined();
+  expect(intersectionPart.properties?.timestamp).toBeDefined();
 });

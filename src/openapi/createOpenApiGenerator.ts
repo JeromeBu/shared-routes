@@ -311,9 +311,23 @@ const zodToOpenApi = (schema: ZodType<any>) => {
 
 const shouldSkipParameterExtraction = <T>(schema: z.Schema<T>): boolean => {
   const typeName = getTypeName(schema);
+
   if (typeName === "object") {
     const shape = getShape(schema);
     return Object.keys(shape).length === 0;
+  }
+
+  if (typeName === "intersection") {
+    const def = (schema as any)._zod?.def || (schema as any).def;
+    const left = def?.left;
+    const right = def?.right;
+
+    if (!left || !right) return true;
+
+    const leftHasParams = !shouldSkipParameterExtraction(left);
+    const rightHasParams = !shouldSkipParameterExtraction(right);
+
+    return !leftHasParams && !rightHasParams;
   }
 
   return true;
@@ -334,7 +348,40 @@ const zodObjectToParameters = <T>(
   paramKind: ParamKind,
   extraDocumentation: Partial<Record<keyof T, Partial<OpenAPI.ParameterObject>>> = {},
 ): Param<unknown>[] => {
+  const typeName = getTypeName(schema);
+
+  if (typeName === "intersection") {
+    const def = (schema as any)._zod?.def || (schema as any).def;
+    const left = def?.left;
+    const right = def?.right;
+
+    const leftParams = left
+      ? zodObjectToParameters(left, paramKind, extraDocumentation)
+      : [];
+    const rightParams = right
+      ? zodObjectToParameters(right, paramKind, extraDocumentation)
+      : [];
+
+    const paramMap = new Map<string, Param<unknown>>();
+    for (const param of leftParams) {
+      paramMap.set(param.name, param);
+    }
+    for (const param of rightParams) {
+      paramMap.set(param.name, param);
+    }
+
+    return Array.from(paramMap.values());
+  }
+
+  if (typeName !== "object") {
+    return [];
+  }
+
   const shape = getShape(schema);
+  if (!shape) {
+    return [];
+  }
+
   return Object.keys(shape).reduce((acc, paramName): Param<unknown>[] => {
     const paramSchema = shape[paramName] as z.Schema<any>;
     const extraDoc = extraDocumentation[paramName as keyof T];
