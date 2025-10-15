@@ -1,8 +1,8 @@
 import { OpenAPIV3_1 } from "openapi-types";
-import { defineRoute, defineRoutes } from "../src";
+import { expect, it } from "vitest";
 import { z } from "zod";
+import { defineRoute, defineRoutes } from "../src";
 import { createOpenApiGenerator } from "../src/openapi";
-import { it, expect } from "vitest";
 
 const bookSchema = z.object({ title: z.string(), author: z.string() });
 const withAuthorizationSchema = z.object({ authorization: z.string() });
@@ -348,4 +348,42 @@ it("has the expected shape", () => {
   // console.log(JSON.stringify(openApiJSON, null, 2));
 
   expect(openApiJSON).toEqual(expected);
+});
+
+it("handles discriminated union with intersection in queryParams", () => {
+  const routesWithComplexQuery = defineRoutes({
+    getItems: defineRoute({
+      url: "/items",
+      method: "get",
+      queryParamsSchema: z
+        .discriminatedUnion("sortBy", [
+          z.object({ sortBy: z.literal("name"), order: z.enum(["asc", "desc"]) }),
+          z.object({ sortBy: z.literal("date"), order: z.enum(["asc", "desc"]) }),
+        ])
+        .and(z.object({ limit: z.number().optional() })),
+      responses: { 200: z.array(z.object({ id: z.string() })) },
+    }),
+  });
+
+  const generateComplexQueryOpenApi = createOpenApiGenerator(
+    { Items: routesWithComplexQuery },
+    rootInfo,
+  );
+
+  // Should not crash when generating OpenAPI
+  expect(() =>
+    generateComplexQueryOpenApi({
+      Items: {
+        getItems: {
+          extraDocs: {
+            responses: {
+              200: {
+                description: "Success",
+              },
+            },
+          },
+        },
+      },
+    }),
+  ).not.toThrow();
 });

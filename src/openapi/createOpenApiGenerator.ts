@@ -152,16 +152,20 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
 
           const parameters = [
             ...(pathParams.length > 0 ? pathParams : []),
-            ...(!isShapeObjectEmpty(queryParamsZodSchema)
-              ? zodObjectToParameters(
+            ...(shouldSkipParameterExtraction(queryParamsZodSchema)
+              ? []
+              : zodObjectToParameters(
                   queryParamsZodSchema,
                   "query",
                   extraDocs?.queryParams,
-                )
-              : []),
-            ...(!isShapeObjectEmpty(headerZodSchema)
-              ? zodObjectToParameters(headerZodSchema, "header", extraDocs?.headerParams)
-              : []),
+                )),
+            ...(shouldSkipParameterExtraction(headerZodSchema)
+              ? []
+              : zodObjectToParameters(
+                  headerZodSchema,
+                  "header",
+                  extraDocs?.headerParams,
+                )),
           ];
 
           const { withRequestBodyExemple, requestBodyDocs } = extractFromOpenApiBody(
@@ -183,7 +187,7 @@ export const createOpenApiGenerator: CreateOpenApiGenerator =
                   parameters,
                 }),
 
-                ...(!isShapeObjectEmpty(requestBodySchema) && {
+                ...(!shouldSkipParameterExtraction(requestBodySchema) && {
                   requestBody: {
                     required: true,
                     content: {
@@ -305,14 +309,14 @@ const zodToOpenApi = (schema: ZodType<any>) => {
   }
 };
 
-const isShapeObjectEmpty = <T>(schema: z.Schema<T>): boolean => {
+const shouldSkipParameterExtraction = <T>(schema: z.Schema<T>): boolean => {
   const typeName = getTypeName(schema);
   if (typeName === "object") {
     const shape = getShape(schema);
     return Object.keys(shape).length === 0;
   }
 
-  return typeName === undefined;
+  return true;
 };
 
 const zodObjectToParameters = <T>(
