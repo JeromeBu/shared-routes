@@ -265,31 +265,67 @@ const extractFromUrl = (
   };
 };
 
-const zodToOpenApi = (schema: ZodType<any>) => {
+const getDef = (schema: ZodType<any>) => (schema as any)._zod?.def || (schema as any).def;
+
+const handleVoidUnion = (options: any[]): Record<string, any> | null => {
+  const hasVoid = options.some((option: any) => getTypeName(option) === "void");
+  if (!hasVoid) return null;
+
+  const nonVoidOptions = options.filter((option: any) => getTypeName(option) !== "void");
+
+  if (nonVoidOptions.length === 0) {
+    return { type: "null" };
+  }
+
+  return {
+    anyOf: nonVoidOptions.map((option: any) => zodToOpenApi(option)),
+  };
+};
+
+const zodToOpenApi = (schema: ZodType<any>): Record<string, any> => {
   const typeName = getTypeName(schema);
 
-  // Handle void types that can't be converted to JSON Schema
   if (typeName === "void") {
     return { type: "null" };
   }
 
-  // Handle union types that might contain void
   if (typeName === "union") {
-    const def = (schema as any)._zod?.def || (schema as any).def;
-    const options = def?.options || [];
+    const options = getDef(schema)?.options || [];
 
-    // Check if this is a void or empty string union (common pattern in responses)
-    if (options.some((option: any) => getTypeName(option) === "void")) {
-      // For void unions, return anyOf structure for consistency with expected format
-      const nonVoidOptions = options.filter(
-        (option: any) => getTypeName(option) !== "void",
-      );
-      if (nonVoidOptions.length === 0) {
-        return { type: "null" };
-      }
-      // Always return anyOf structure for void unions to match expected format
+    if (options.length === 0) {
+      return { type: "object" };
+    }
+
+    const voidUnionResult = handleVoidUnion(options);
+    if (voidUnionResult) {
+      return voidUnionResult;
+    }
+
+    return {
+      anyOf: options.map((option: any) => zodToOpenApi(option)),
+    };
+  }
+
+  if (typeName === "discriminatedUnion") {
+    const options = getDef(schema)?.options || [];
+
+    if (options.length === 0) {
+      return { type: "object" };
+    }
+
+    return {
+      oneOf: options.map((option: any) => zodToOpenApi(option)),
+    };
+  }
+
+  if (typeName === "intersection") {
+    const def = getDef(schema);
+    const left = def?.left;
+    const right = def?.right;
+
+    if (left && right) {
       return {
-        anyOf: nonVoidOptions.map((option: any) => zodToOpenApi(option)),
+        allOf: [zodToOpenApi(left), zodToOpenApi(right)],
       };
     }
   }
@@ -297,14 +333,13 @@ const zodToOpenApi = (schema: ZodType<any>) => {
   try {
     const result = z.toJSONSchema(schema) as any;
     const { $schema, ...rest } = result;
-    // For consistency with the test expectation, set additionalProperties to undefined
-    // if it would be false for object schemas (to match old zod-to-json-schema behavior)
+
     if (rest.type === "object" && rest.additionalProperties === false) {
       rest.additionalProperties = undefined;
     }
+
     return rest;
   } catch (_error) {
-    // Fallback for schemas that can't be converted
     return { type: "object" };
   }
 };
@@ -318,16 +353,13 @@ const shouldSkipParameterExtraction = <T>(schema: z.Schema<T>): boolean => {
   }
 
   if (typeName === "intersection") {
-    const def = (schema as any)._zod?.def || (schema as any).def;
+    const def = getDef(schema);
     const left = def?.left;
     const right = def?.right;
 
     if (!left || !right) return true;
 
-    const leftHasParams = !shouldSkipParameterExtraction(left);
-    const rightHasParams = !shouldSkipParameterExtraction(right);
-
-    return !leftHasParams && !rightHasParams;
+    return shouldSkipParameterExtraction(left) && shouldSkipParameterExtraction(right);
   }
 
   return true;
@@ -343,6 +375,25 @@ const isSchemaEmpty = <T>(schema: z.Schema<T>): boolean => {
   return false;
 };
 
+const mergeIntersectionParameters = (
+  left: z.Schema<any> | undefined,
+  right: z.Schema<any> | undefined,
+  paramKind: ParamKind,
+  extraDocumentation: Partial<Record<string, Partial<OpenAPI.ParameterObject>>>,
+): Param<unknown>[] => {
+  const leftParams = left
+    ? zodObjectToParameters(left, paramKind, extraDocumentation)
+    : [];
+  const rightParams = right
+    ? zodObjectToParameters(right, paramKind, extraDocumentation)
+    : [];
+
+  const paramMap = new Map<string, Param<unknown>>();
+  [...leftParams, ...rightParams].forEach((param) => paramMap.set(param.name, param));
+
+  return Array.from(paramMap.values());
+};
+
 const zodObjectToParameters = <T>(
   schema: z.Schema<T>,
   paramKind: ParamKind,
@@ -351,26 +402,13 @@ const zodObjectToParameters = <T>(
   const typeName = getTypeName(schema);
 
   if (typeName === "intersection") {
-    const def = (schema as any)._zod?.def || (schema as any).def;
-    const left = def?.left;
-    const right = def?.right;
-
-    const leftParams = left
-      ? zodObjectToParameters(left, paramKind, extraDocumentation)
-      : [];
-    const rightParams = right
-      ? zodObjectToParameters(right, paramKind, extraDocumentation)
-      : [];
-
-    const paramMap = new Map<string, Param<unknown>>();
-    for (const param of leftParams) {
-      paramMap.set(param.name, param);
-    }
-    for (const param of rightParams) {
-      paramMap.set(param.name, param);
-    }
-
-    return Array.from(paramMap.values());
+    const def = getDef(schema);
+    return mergeIntersectionParameters(
+      def?.left,
+      def?.right,
+      paramKind,
+      extraDocumentation,
+    );
   }
 
   if (typeName !== "object") {
@@ -382,25 +420,20 @@ const zodObjectToParameters = <T>(
     return [];
   }
 
-  return Object.keys(shape).reduce((acc, paramName): Param<unknown>[] => {
+  return Object.keys(shape).map((paramName): Param<unknown> => {
     const paramSchema = shape[paramName] as z.Schema<any>;
     const extraDoc = extraDocumentation[paramName as keyof T];
     const initialTypeName = getTypeName(paramSchema);
     const required = initialTypeName !== "optional";
 
-    const schema = zodToOpenApi(paramSchema) as any;
-
-    return [
-      ...acc,
-      {
-        ...(extraDoc as any),
-        in: paramKind,
-        name: paramName,
-        required,
-        schema,
-      },
-    ];
-  }, [] as Param<unknown>[]);
+    return {
+      ...(extraDoc as any),
+      in: paramKind,
+      name: paramName,
+      required,
+      schema: zodToOpenApi(paramSchema) as any,
+    };
+  });
 };
 
 const getTypeName = <T>(schema: z.Schema<T>) => {

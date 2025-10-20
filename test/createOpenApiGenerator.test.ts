@@ -368,38 +368,25 @@ it("extracts query params from intersection schemas", () => {
     }),
   });
 
-  const generateComplexQueryOpenApi = createOpenApiGenerator(
+  const openApiDoc = createOpenApiGenerator(
     { Items: routesWithComplexQuery },
     rootInfo,
-  );
-
-  const openApiDoc = generateComplexQueryOpenApi({
+  )({
     Items: {
       getItems: {
-        extraDocs: {
-          responses: {
-            200: {
-              description: "Success",
-            },
-          },
-        },
+        extraDocs: { responses: { 200: { description: "Success" } } },
       },
     },
   });
 
   const parameters = openApiDoc.paths!["/items"]!.get!.parameters as any[];
-  expect(parameters).toBeDefined();
-
   const paramNames = parameters.map((p) => p.name);
+
   expect(paramNames).toContain("a");
   expect(paramNames).toContain("b");
   expect(paramNames).toContain("limit");
-
-  const limitParam = parameters.find((p) => p.name === "limit");
-  expect(limitParam?.required).toBe(false);
-
-  const aParam = parameters.find((p) => p.name === "a");
-  expect(aParam?.required).toBe(true);
+  expect(parameters.find((p) => p.name === "limit")?.required).toBe(false);
+  expect(parameters.find((p) => p.name === "a")?.required).toBe(true);
 });
 
 it("generates proper OpenAPI structure for union and intersection in requestBody", () => {
@@ -407,54 +394,222 @@ it("generates proper OpenAPI structure for union and intersection in requestBody
   const schemaB = z.object({ type: z.literal("B"), valueB: z.number() });
   const commonFields = z.object({ id: z.string(), timestamp: z.number() });
 
-  const routesWithComplexBody = defineRoutes({
-    createItem: defineRoute({
-      url: "/items",
-      method: "post",
-      requestBodySchema: schemaA.or(schemaB).and(commonFields),
-      responses: { 201: z.object({ success: z.boolean() }) },
-    }),
+  const openApiDoc = createOpenApiGenerator(
+    {
+      Items: defineRoutes({
+        createItem: defineRoute({
+          url: "/items",
+          method: "post",
+          requestBodySchema: schemaA.or(schemaB).and(commonFields),
+          responses: { 201: z.object({ success: z.boolean() }) },
+        }),
+      }),
+    },
+    rootInfo,
+  )({
+    Items: {
+      createItem: { extraDocs: { responses: { 201: { description: "Success" } } } },
+    },
   });
 
-  const generateComplexBodyOpenApi = createOpenApiGenerator(
-    { Items: routesWithComplexBody },
-    rootInfo,
-  );
+  const schema = (openApiDoc.paths!["/items"]!.post!.requestBody as any).content![
+    "application/json"
+  ].schema;
 
-  const openApiDoc = generateComplexBodyOpenApi({
+  expect(schema.allOf).toHaveLength(2);
+  expect(schema.allOf[0].anyOf).toHaveLength(2);
+  expect(schema.allOf[0].anyOf[0].properties?.type?.const).toBe("A");
+  expect(schema.allOf[0].anyOf[0].properties?.valueA).toBeDefined();
+  expect(schema.allOf[0].anyOf[1].properties?.type?.const).toBe("B");
+  expect(schema.allOf[0].anyOf[1].properties?.valueB).toBeDefined();
+  expect(schema.allOf[1].properties?.id).toBeDefined();
+  expect(schema.allOf[1].properties?.timestamp).toBeDefined();
+});
+
+it("extracts header parameters from z.looseObject", () => {
+  const openApiDoc = createOpenApiGenerator(
+    {
+      Items: defineRoutes({
+        createItem: defineRoute({
+          url: "/items",
+          method: "post",
+          headersSchema: z.looseObject({
+            authorization: z.string(),
+            "x-api-key": z.string().optional(),
+          }),
+          requestBodySchema: z.object({ name: z.string() }),
+          responses: { 201: z.object({ id: z.string() }) },
+        }),
+      }),
+    },
+    rootInfo,
+  )({
     Items: {
       createItem: {
         extraDocs: {
-          responses: {
-            201: {
-              description: "Success",
-            },
-          },
+          headerParams: { authorization: { description: "Bearer token" } },
+          responses: { 201: { description: "Success" } },
         },
       },
     },
   });
 
-  const requestBody = openApiDoc.paths!["/items"]!.post!.requestBody!;
-  expect(requestBody).toBeDefined();
+  const parameters = openApiDoc.paths!["/items"]!.post!.parameters as any[];
+  const authParam = parameters.find((p) => p.name === "authorization");
+  const apiKeyParam = parameters.find((p) => p.name === "x-api-key");
 
-  const schema = (requestBody as any).content!["application/json"].schema;
-  expect(schema).toBeDefined();
+  expect(authParam?.in).toBe("header");
+  expect(authParam?.required).toBe(true);
+  expect(authParam?.description).toBe("Bearer token");
+  expect(authParam?.schema.type).toBe("string");
+  expect(apiKeyParam?.in).toBe("header");
+  expect(apiKeyParam?.required).toBe(false);
+});
 
-  expect(schema.allOf).toBeDefined();
+it("generates requestBody for discriminated union schemas", () => {
+  const openApiDoc = createOpenApiGenerator(
+    {
+      Contact: defineRoutes({
+        contact: defineRoute({
+          url: "/contact",
+          method: "post",
+          requestBodySchema: z.discriminatedUnion("contactMode", [
+            z.object({ contactMode: z.literal("email"), email: z.string() }),
+            z.object({ contactMode: z.literal("phone"), phone: z.string() }),
+          ]),
+          responses: { 200: z.object({ success: z.boolean() }) },
+        }),
+      }),
+    },
+    rootInfo,
+  )({
+    Contact: {
+      contact: {
+        extraDocs: {
+          body: {
+            examples: {
+              email: {
+                value: { contactMode: "email" as const, email: "test@example.com" },
+              },
+              phone: { value: { contactMode: "phone" as const, phone: "+33123456789" } },
+            },
+          },
+          responses: { 200: { description: "Success" } },
+        },
+      },
+    },
+  });
+
+  const content = (openApiDoc.paths!["/contact"]!.post!.requestBody as any).content![
+    "application/json"
+  ];
+
+  expect(content.schema).toBeDefined();
+  expect(content.examples.email).toBeDefined();
+  expect(content.examples.phone).toBeDefined();
+});
+
+it("generates requestBody with allOf for union.and(object) pattern", () => {
+  const schemaA = z.object({ type: z.literal("A"), valueA: z.string() });
+  const schemaB = z.object({ type: z.literal("B"), valueB: z.number() });
+  const commonFields = z.object({
+    siret: z.string().optional(),
+    note: z.string().optional(),
+  });
+
+  const openApiDoc = createOpenApiGenerator(
+    {
+      Contact: defineRoutes({
+        contactEstablishment: defineRoute({
+          url: "/v3/contact-establishment",
+          method: "post",
+          requestBodySchema: schemaA.or(schemaB).and(commonFields),
+          headersSchema: z.looseObject({ authorization: z.string() }),
+          responses: { 200: z.object({ success: z.boolean() }) },
+        }),
+      }),
+    },
+    rootInfo,
+  )({
+    Contact: {
+      contactEstablishment: {
+        extraDocs: {
+          body: {
+            examples: {
+              exampleA: {
+                value: { type: "A" as const, valueA: "test", siret: "12345678901234" },
+              },
+              exampleB: {
+                value: { type: "B" as const, valueB: 42, note: "some note" },
+              },
+            },
+          },
+          responses: { 200: { description: "Success" } },
+        },
+      },
+    },
+  });
+
+  const content = (
+    openApiDoc.paths!["/v3/contact-establishment"]!.post!.requestBody as any
+  ).content!["application/json"];
+  const schema = content.schema;
+
   expect(schema.allOf).toHaveLength(2);
+  expect(schema.allOf[0].anyOf).toHaveLength(2);
+  expect(schema.allOf[0].anyOf[0].properties?.type?.const).toBe("A");
+  expect(schema.allOf[0].anyOf[0].properties?.valueA).toBeDefined();
+  expect(schema.allOf[0].anyOf[1].properties?.type?.const).toBe("B");
+  expect(schema.allOf[0].anyOf[1].properties?.valueB).toBeDefined();
+  expect(schema.allOf[1].properties?.siret).toBeDefined();
+  expect(schema.allOf[1].properties?.note).toBeDefined();
+  expect(content.examples.exampleA).toBeDefined();
+  expect(content.examples.exampleB).toBeDefined();
+});
 
+it("generates detailed properties in union.and schemas (not just type object)", () => {
+  const openApiDoc = createOpenApiGenerator(
+    {
+      Contact: defineRoutes({
+        contact: defineRoute({
+          url: "/v3/contact",
+          method: "post",
+          requestBodySchema: z
+            .object({
+              contactMode: z.literal("email"),
+              email: z.string(),
+              message: z.string(),
+            })
+            .or(
+              z.object({
+                contactMode: z.literal("phone"),
+                phone: z.string(),
+                message: z.string(),
+              }),
+            )
+            .and(z.object({ siret: z.string().optional(), note: z.string().optional() })),
+          responses: { 200: z.object({ success: z.boolean() }) },
+        }),
+      }),
+    },
+    rootInfo,
+  )({
+    Contact: {
+      contact: { extraDocs: { responses: { 200: { description: "Success" } } } },
+    },
+  });
+
+  const schema = (openApiDoc.paths!["/v3/contact"]!.post!.requestBody as any).content![
+    "application/json"
+  ].schema;
+
+  expect(schema.allOf).toHaveLength(2);
   const unionPart = schema.allOf[0];
-  expect(unionPart.anyOf).toBeDefined();
   expect(unionPart.anyOf).toHaveLength(2);
-
-  expect(unionPart.anyOf[0].properties?.type?.const).toBe("A");
-  expect(unionPart.anyOf[0].properties?.valueA).toBeDefined();
-
-  expect(unionPart.anyOf[1].properties?.type?.const).toBe("B");
-  expect(unionPart.anyOf[1].properties?.valueB).toBeDefined();
-
-  const intersectionPart = schema.allOf[1];
-  expect(intersectionPart.properties?.id).toBeDefined();
-  expect(intersectionPart.properties?.timestamp).toBeDefined();
+  expect(unionPart.anyOf[0].type).toBe("object");
+  expect(unionPart.anyOf[0].properties.contactMode.const).toBe("email");
+  expect(unionPart.anyOf[0].properties.email).toBeDefined();
+  expect(unionPart.anyOf[1].properties.contactMode.const).toBe("phone");
+  expect(unionPart.anyOf[1].properties.phone).toBeDefined();
+  expect(schema.allOf[1].properties.siret).toBeDefined();
 });
