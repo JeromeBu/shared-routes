@@ -567,6 +567,193 @@ it("generates requestBody with allOf for union.and(object) pattern", () => {
   expect(content.examples.exampleB).toBeDefined();
 });
 
+it("extracts query params from top-level union schema", () => {
+  const routesWithTopLevelUnion = defineRoutes({
+    search: defineRoute({
+      method: "get",
+      url: "/search-union",
+      queryParamsSchema: z.union([
+        z.object({ sortBy: z.literal("date"), order: z.enum(["asc", "desc"]) }),
+        z.object({ sortBy: z.literal("distance"), lat: z.number(), lng: z.number() }),
+      ]),
+      responses: { 200: z.array(z.string()) },
+    }),
+  });
+
+  const openApiDoc = createOpenApiGenerator(
+    { Search: routesWithTopLevelUnion },
+    rootInfo,
+  )({
+    Search: {
+      search: { extraDocs: { responses: { 200: { description: "Success" } } } },
+    },
+  });
+
+  const params = openApiDoc.paths!["/search-union"]!.get!.parameters as any[];
+  expect(params).toBeDefined();
+  expect(params.length).toBeGreaterThan(0);
+
+  const paramNames = params.map((p) => p.name);
+  expect(paramNames).toContain("sortBy");
+  expect(paramNames).toContain("order");
+  expect(paramNames).toContain("lat");
+  expect(paramNames).toContain("lng");
+});
+
+it("extracts query params from discriminated union inside intersection", () => {
+  const geoParamsSchema = z.discriminatedUnion("sortBy", [
+    z.object({
+      sortBy: z.enum(["date", "score"]),
+      sortOrder: z.enum(["asc", "desc"]).optional(),
+      latitude: z.number().optional(),
+      longitude: z.number().optional(),
+      distanceKm: z.number().optional(),
+    }),
+    z.object({
+      sortBy: z.literal("distance"),
+      sortOrder: z.enum(["asc", "desc"]).optional(),
+      latitude: z.number(),
+      longitude: z.number(),
+      distanceKm: z.number(),
+    }),
+  ]);
+
+  const routesWithDiscriminatedUnion = defineRoutes({
+    getOffers: defineRoute({
+      method: "get",
+      url: "/offers",
+      queryParamsSchema: z
+        .object({
+          appellationCodes: z.array(z.string()).optional(),
+          sirets: z.array(z.string()).optional(),
+        })
+        .and(z.object({ page: z.number().optional(), perPage: z.number().optional() }))
+        .and(geoParamsSchema)
+        .and(z.object({ acquisitionCampaign: z.string().optional() })),
+      responses: { 200: z.array(z.object({ id: z.string() })) },
+    }),
+  });
+
+  const openApiDoc = createOpenApiGenerator(
+    { Offers: routesWithDiscriminatedUnion },
+    rootInfo,
+  )({
+    Offers: {
+      getOffers: { extraDocs: { responses: { 200: { description: "Success" } } } },
+    },
+  });
+
+  const params = openApiDoc.paths!["/offers"]!.get!.parameters as any[];
+  const paramNames = params.map((p) => p.name);
+
+  expect(paramNames).toContain("appellationCodes");
+  expect(paramNames).toContain("sirets");
+  expect(paramNames).toContain("page");
+  expect(paramNames).toContain("perPage");
+  expect(paramNames).toContain("sortBy");
+  expect(paramNames).toContain("sortOrder");
+  expect(paramNames).toContain("latitude");
+  expect(paramNames).toContain("longitude");
+  expect(paramNames).toContain("distanceKm");
+  expect(paramNames).toContain("acquisitionCampaign");
+
+  expect(params.find((p) => p.name === "sortBy")?.required).toBe(true);
+  expect(params.find((p) => p.name === "sortOrder")?.required).toBe(false);
+  expect(params.find((p) => p.name === "latitude")?.required).toBe(false);
+});
+
+it("extracts query params from regular union inside intersection", () => {
+  const sortParamsSchema = z.union([
+    z.object({
+      sortBy: z.literal("date"),
+      order: z.enum(["asc", "desc"]).optional(),
+    }),
+    z.object({
+      sortBy: z.literal("distance"),
+      latitude: z.number(),
+      longitude: z.number(),
+    }),
+  ]);
+
+  const routesWithUnion = defineRoutes({
+    search: defineRoute({
+      method: "get",
+      url: "/search",
+      queryParamsSchema: z
+        .object({ filter: z.string().optional() })
+        .and(sortParamsSchema),
+      responses: { 200: z.array(z.string()) },
+    }),
+  });
+
+  const openApiDoc = createOpenApiGenerator(
+    { Search: routesWithUnion },
+    rootInfo,
+  )({
+    Search: {
+      search: { extraDocs: { responses: { 200: { description: "Success" } } } },
+    },
+  });
+
+  const params = openApiDoc.paths!["/search"]!.get!.parameters as any[];
+  const paramNames = params.map((p) => p.name);
+
+  expect(paramNames).toContain("filter");
+  expect(paramNames).toContain("sortBy");
+  expect(paramNames).toContain("order");
+  expect(paramNames).toContain("latitude");
+  expect(paramNames).toContain("longitude");
+
+  expect(params.find((p) => p.name === "sortBy")?.required).toBe(true);
+  expect(params.find((p) => p.name === "order")?.required).toBe(false);
+  expect(params.find((p) => p.name === "latitude")?.required).toBe(false);
+});
+
+it("extracts query params from deeply nested intersection with union", () => {
+  const routesWithDeepNesting = defineRoutes({
+    complex: defineRoute({
+      method: "get",
+      url: "/complex",
+      queryParamsSchema: z
+        .object({ a: z.string() })
+        .and(z.object({ b: z.string().optional() }))
+        .and(
+          z.discriminatedUnion("type", [
+            z.object({ type: z.literal("x"), xParam: z.number() }),
+            z.object({ type: z.literal("y"), yParam: z.string() }),
+          ]),
+        )
+        .and(z.object({ c: z.boolean().optional() })),
+      responses: { 200: z.void() },
+    }),
+  });
+
+  const openApiDoc = createOpenApiGenerator(
+    { Complex: routesWithDeepNesting },
+    rootInfo,
+  )({
+    Complex: {
+      complex: { extraDocs: { responses: { 200: { description: "Success" } } } },
+    },
+  });
+
+  const params = openApiDoc.paths!["/complex"]!.get!.parameters as any[];
+  const paramNames = params.map((p) => p.name);
+
+  expect(paramNames).toContain("a");
+  expect(paramNames).toContain("b");
+  expect(paramNames).toContain("c");
+  expect(paramNames).toContain("type");
+  expect(paramNames).toContain("xParam");
+  expect(paramNames).toContain("yParam");
+
+  expect(params.find((p) => p.name === "a")?.required).toBe(true);
+  expect(params.find((p) => p.name === "b")?.required).toBe(false);
+  expect(params.find((p) => p.name === "type")?.required).toBe(true);
+  expect(params.find((p) => p.name === "xParam")?.required).toBe(false);
+  expect(params.find((p) => p.name === "yParam")?.required).toBe(false);
+});
+
 it("generates detailed properties in union.and schemas (not just type object)", () => {
   const openApiDoc = createOpenApiGenerator(
     {

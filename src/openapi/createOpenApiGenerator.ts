@@ -362,6 +362,14 @@ const shouldSkipParameterExtraction = <T>(schema: z.Schema<T>): boolean => {
     return shouldSkipParameterExtraction(left) && shouldSkipParameterExtraction(right);
   }
 
+  if (typeName === "discriminatedUnion" || typeName === "union") {
+    const options = getDef(schema)?.options || [];
+    if (options.length === 0) return true;
+    return options.every((option: z.Schema<any>) =>
+      shouldSkipParameterExtraction(option),
+    );
+  }
+
   return true;
 };
 
@@ -394,6 +402,37 @@ const mergeIntersectionParameters = (
   return Array.from(paramMap.values());
 };
 
+const mergeUnionParameters = (
+  options: z.Schema<any>[],
+  paramKind: ParamKind,
+  extraDocumentation: Partial<Record<string, Partial<OpenAPI.ParameterObject>>>,
+): Param<unknown>[] => {
+  if (options.length === 0) return [];
+
+  const allOptionParams = options.map((option) =>
+    zodObjectToParameters(option, paramKind, extraDocumentation),
+  );
+
+  const paramPresence = new Map<string, { count: number; param: Param<unknown> }>();
+
+  for (const optionParams of allOptionParams) {
+    for (const param of optionParams) {
+      const existing = paramPresence.get(param.name);
+      if (existing) {
+        existing.count++;
+        if (!param.required) existing.param.required = false;
+      } else {
+        paramPresence.set(param.name, { count: 1, param: { ...param } });
+      }
+    }
+  }
+
+  return Array.from(paramPresence.values()).map(({ count, param }) => ({
+    ...param,
+    required: param.required && count === options.length,
+  }));
+};
+
 const zodObjectToParameters = <T>(
   schema: z.Schema<T>,
   paramKind: ParamKind,
@@ -409,6 +448,11 @@ const zodObjectToParameters = <T>(
       paramKind,
       extraDocumentation,
     );
+  }
+
+  if (typeName === "discriminatedUnion" || typeName === "union") {
+    const options = getDef(schema)?.options || [];
+    return mergeUnionParameters(options, paramKind, extraDocumentation);
   }
 
   if (typeName !== "object") {
