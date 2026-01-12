@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node: [ '22' ]
+        node: [ '24' ]
         os: [ ubuntu-latest ]
     name: Test with Node v${{ matrix.node }} on ${{ matrix.os }}
     steps:
@@ -41,7 +41,7 @@ jobs:
         version: 10
     - uses: actions/setup-node@v3
       with:
-        node-version: '22'
+        node-version: '24'
         cache: 'pnpm'
     - name: Cache
       uses: actions/cache@v3
@@ -88,7 +88,10 @@ jobs:
 
   publish:
     runs-on: ubuntu-latest
-    needs: 
+    permissions:
+      id-token: write
+      contents: write
+    needs:
       - check_if_version_upgraded
     # We create a release only if the version have been upgraded and we are on the main branch
     # or if we are on a branch of the repo that has an PR open on main.
@@ -112,6 +115,7 @@ jobs:
     - run: git checkout -b tmp_branch
     - uses: actions/setup-node@v3
       with:
+        node-version: '24'
         registry-url: https://registry.npmjs.org/
         cache: 'pnpm'
     - run: pnpm install --frozen-lockfile
@@ -128,17 +132,12 @@ jobs:
           echo "This version is already published"
           exit 0
         fi
-        if [ "$NODE_AUTH_TOKEN" = "" ]; then
-          echo "Can't publish on NPM, You must first create a secret called NPM_TOKEN that contains your NPM auth token. https://help.github.com/en/actions/automating-your-workflow-with-github-actions/creating-and-using-encrypted-secrets"
-          false
-        fi
         EXTRA_ARGS=""
         if [ "$IS_PRE_RELEASE" = "true" ]; then
             EXTRA_ARGS="--tag next"
         fi
-        npm publish $EXTRA_ARGS
+        npm publish --provenance $EXTRA_ARGS
       env:
-        NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
         VERSION: ${{ needs.check_if_version_upgraded.outputs.to_version }}
         IS_PRE_RELEASE: ${{ needs.check_if_version_upgraded.outputs.is_pre_release }}
     - run: |
