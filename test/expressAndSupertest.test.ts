@@ -365,6 +365,46 @@ const expectToEqual = <T>(actual: T, expected: T) => expect(actual).toEqual(expe
 const expectToMatch = <T>(actual: T, expected: Partial<T>) =>
   expect(actual).toMatchObject(expected);
 
+describe("discriminated union validation errors", () => {
+  it("returns meaningful error issues for discriminated union validation failure", async () => {
+    const geoParamsSchema = z.discriminatedUnion("sortBy", [
+      z.object({
+        sortBy: z.literal("date"),
+        order: z.enum(["asc", "desc"]).optional(),
+      }),
+      z.object({
+        sortBy: z.literal("distance"),
+        latitude: z.coerce.number(),
+        longitude: z.coerce.number(),
+      }),
+    ]);
+
+    const searchRoutes = defineRoutes({
+      search: defineRoute({
+        method: "get",
+        url: "/search",
+        queryParamsSchema: z
+          .object({ filter: z.string().optional() })
+          .and(geoParamsSchema),
+        responses: { 200: z.array(z.string()) },
+      }),
+    });
+
+    const app = express();
+    const router = ExpressRouter();
+    const sharedRouter = createExpressSharedRouter(searchRoutes, router);
+    sharedRouter.search((_req, res) => res.json([]));
+    app.use(router);
+
+    const response = await supertest(app).get("/search?filter=test");
+
+    expect(response.status).toBe(400);
+    expect(response.body.issues).toBeDefined();
+    expect(response.body.issues.length).toBeGreaterThan(0);
+    expect(response.body.issues.some((i: string) => i.includes("sortBy"))).toBe(true);
+  });
+});
+
 // type Book = { title: string; author: string };
 // const bookSchema: z.Schema<Book> = z.object({
 //   title: z.string(),

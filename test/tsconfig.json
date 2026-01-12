@@ -13,7 +13,8 @@
     "incremental": false,
     "strict": true,
     "downlevelIteration": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true
   },
   "include": ["."]
 }

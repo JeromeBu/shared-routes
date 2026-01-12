@@ -7,7 +7,9 @@
     "url": "git@github.com:JeromeBu/shared-routes.git"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "pnpm typecheck:src && pnpm typecheck:test",
+    "typecheck:src": "tsc --noEmit",
+    "typecheck:test": "tsc --noEmit -p test/tsconfig.json",
     "build": "pnpm build:cjs && pnpm build:esm # && pnpm build:deno",
     "watch": "tsc -w & tsc -p tsconfig.esm.json -w",
     "build:cjs": "tsc",

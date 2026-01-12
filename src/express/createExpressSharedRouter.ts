@@ -47,20 +47,52 @@ const makeValidationMiddleware =
     }
   };
 
+const formatPath = (
+  path: StandardSchemaV1.Issue["path"] | undefined,
+  fallback = "",
+): string => path?.join(".") || fallback;
+
+const formatIssueString = (path: string, message: string): string =>
+  `${path} : ${message}`;
+
+const hasErrorCode = (issue: StandardSchemaV1.Issue, code: string): boolean =>
+  "code" in issue && issue.code === code;
+
 const zodIssuesToStrings = (
   issues: ReadonlyArray<StandardSchemaV1.Issue> = [],
-): string[] => {
-  return issues.flatMap((issue) => {
-    if ("code" in issue && issue.code === "invalid_union") {
-      const failureResults: StandardSchemaV1.FailureResult[] =
-        (issue as any)?.errors ?? [];
-      return failureResults.flatMap((issues) => zodIssuesToStrings(issues as any));
+): string[] =>
+  issues.flatMap((issue): string | string[] => {
+    const issueData = issue as any;
+
+    if (hasErrorCode(issue, "invalid_union")) {
+      const nestedErrors = issueData.errors ?? [];
+      if (nestedErrors.length > 0) {
+        return nestedErrors.flatMap((nestedIssues: any) =>
+          zodIssuesToStrings(nestedIssues),
+        );
+      }
+
+      const path = formatPath(issue.path, issueData.discriminator);
+      const messageParts = [
+        issue.message,
+        issueData.note,
+        issueData.discriminator && `discriminator: ${issueData.discriminator}`,
+      ].filter(Boolean);
+      return formatIssueString(path, messageParts.join(" - "));
     }
 
-    const { message, path } = issue;
-    return `${path?.join(".")} : ${message}`;
+    if (hasErrorCode(issue, "invalid_union_discriminator")) {
+      return formatIssueString(formatPath(issue.path, "discriminator"), issue.message);
+    }
+
+    if (Array.isArray(issueData.unionErrors)) {
+      return issueData.unionErrors.flatMap((unionError: any) =>
+        zodIssuesToStrings(unionError?.issues ?? []),
+      );
+    }
+
+    return formatIssueString(formatPath(issue.path), issue.message);
   });
-};
 
 const assignHandlersToExpressRouter = (
   expressRouter: Router,
