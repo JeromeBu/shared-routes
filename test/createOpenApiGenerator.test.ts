@@ -800,3 +800,35 @@ it("generates detailed properties in union.and schemas (not just type object)", 
   expect(unionPart.anyOf[1].properties.phone).toBeDefined();
   expect(schema.allOf[1].properties.siret).toBeDefined();
 });
+
+it("generates response schema for schemas with explicit transform", () => {
+  const routes = defineRoutes({
+    getUser: defineRoute({
+      url: "/user",
+      method: "get",
+      responses: {
+        200: z.object({
+          id: z.string(),
+          createdAt: z.string().transform((s) => new Date(s)),
+        }),
+      },
+    }),
+  });
+
+  const openApiDoc = createOpenApiGenerator(
+    { Users: routes },
+    rootInfo,
+  )({
+    Users: {
+      getUser: { extraDocs: { responses: { 200: { description: "Success" } } } },
+    },
+  });
+
+  const schema = (openApiDoc.paths!["/user"]!.get!.responses as any)["200"].content[
+    "application/json"
+  ].schema;
+
+  expect(schema.properties).toBeDefined();
+  expect(schema.properties.id.type).toBe("string");
+  expect(schema.properties.createdAt.type).toBe("string");
+});

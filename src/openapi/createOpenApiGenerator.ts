@@ -267,6 +267,54 @@ const extractFromUrl = (
 
 const getDef = (schema: ZodType<any>) => (schema as any)._zod?.def || (schema as any).def;
 
+const unwrapTransforms = (schema: ZodType<any>): ZodType<any> => {
+  const typeName = getTypeName(schema);
+
+  if (typeName === "transform" || typeName === "effect" || typeName === "pipe") {
+    const def = getDef(schema);
+    if (def?.in) {
+      return unwrapTransforms(def.in);
+    }
+  }
+
+  if (typeName === "object") {
+    const shape = getShape(schema);
+    if (shape) {
+      const newShape = Object.keys(shape).reduce<Record<string, ZodType<any>>>(
+        (acc, key) => ({
+          ...acc,
+          [key]: unwrapTransforms(shape[key] as ZodType<any>),
+        }),
+        {},
+      );
+      return z.object(newShape);
+    }
+  }
+
+  if (typeName === "array") {
+    const def = getDef(schema);
+    if (def?.element) {
+      return z.array(unwrapTransforms(def.element));
+    }
+  }
+
+  if (typeName === "optional") {
+    const def = getDef(schema);
+    if (def?.innerType) {
+      return unwrapTransforms(def.innerType).optional();
+    }
+  }
+
+  if (typeName === "nullable") {
+    const def = getDef(schema);
+    if (def?.innerType) {
+      return unwrapTransforms(def.innerType).nullable();
+    }
+  }
+
+  return schema;
+};
+
 const handleVoidUnion = (options: any[]): Record<string, any> | null => {
   const hasVoid = options.some((option: any) => getTypeName(option) === "void");
   if (!hasVoid) return null;
@@ -287,6 +335,13 @@ const zodToOpenApi = (schema: ZodType<any>): Record<string, any> => {
 
   if (typeName === "void") {
     return { type: "null" };
+  }
+
+  if (typeName === "transform" || typeName === "effect" || typeName === "pipe") {
+    const def = getDef(schema);
+    if (def?.in) {
+      return zodToOpenApi(def.in);
+    }
   }
 
   if (typeName === "union") {
@@ -331,7 +386,8 @@ const zodToOpenApi = (schema: ZodType<any>): Record<string, any> => {
   }
 
   try {
-    const result = z.toJSONSchema(schema) as any;
+    const unwrapped = unwrapTransforms(schema);
+    const result = z.toJSONSchema(unwrapped) as any;
     const { $schema, ...rest } = result;
 
     if (rest.type === "object" && rest.additionalProperties === false) {
