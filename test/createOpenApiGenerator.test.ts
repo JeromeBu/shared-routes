@@ -832,3 +832,75 @@ it("generates response schema for schemas with explicit transform", () => {
   expect(schema.properties.id.type).toBe("string");
   expect(schema.properties.createdAt.type).toBe("string");
 });
+
+it("generates query parameter schema for z.preprocess wrapping an optional array", () => {
+  const routes = defineRoutes({
+    searchEstablishments: defineRoute({
+      url: "/establishments",
+      method: "get",
+      queryParamsSchema: z.object({
+        siret: z
+          .preprocess((v) => (Array.isArray(v) ? v : [v]), z.array(z.string()))
+          .optional(),
+      }),
+      responses: { 200: z.object({}) },
+    }),
+  });
+
+  const openApiDoc = createOpenApiGenerator(
+    { Establishments: routes },
+    rootInfo,
+  )({
+    Establishments: {
+      searchEstablishments: {
+        extraDocs: { responses: { 200: { description: "Success" } } },
+      },
+    },
+  });
+
+  const parameters = (openApiDoc.paths!["/establishments"]!.get! as any).parameters;
+  const siretParam = parameters.find((p: any) => p.name === "siret");
+
+  expect(siretParam).toBeDefined();
+  expect(siretParam.required).toBe(false);
+  expect(siretParam.schema.type).toBe("array");
+  expect(siretParam.schema.items.type).toBe("string");
+});
+
+it("still generates query parameter schema for a classic .transform()", () => {
+  const routes = defineRoutes({
+    listItems: defineRoute({
+      url: "/items",
+      method: "get",
+      queryParamsSchema: z.object({
+        page: z.string().transform((v) => Number.parseInt(v, 10)),
+        tag: z
+          .string()
+          .optional()
+          .transform((v) => v?.toUpperCase()),
+      }),
+      responses: { 200: z.object({}) },
+    }),
+  });
+
+  const openApiDoc = createOpenApiGenerator(
+    { Items: routes },
+    rootInfo,
+  )({
+    Items: {
+      listItems: { extraDocs: { responses: { 200: { description: "Success" } } } },
+    },
+  });
+
+  const parameters = (openApiDoc.paths!["/items"]!.get! as any).parameters;
+  const pageParam = parameters.find((p: any) => p.name === "page");
+  const tagParam = parameters.find((p: any) => p.name === "tag");
+
+  expect(pageParam).toBeDefined();
+  expect(pageParam.required).toBe(true);
+  expect(pageParam.schema.type).toBe("string");
+
+  expect(tagParam).toBeDefined();
+  expect(tagParam.required).toBe(false);
+  expect(tagParam.schema.type).toBe("string");
+});

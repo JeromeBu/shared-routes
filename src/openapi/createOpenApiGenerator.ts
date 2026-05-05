@@ -267,14 +267,26 @@ const extractFromUrl = (
 
 const getDef = (schema: ZodType<any>) => (schema as any)._zod?.def || (schema as any).def;
 
+// Zod v4 wraps both `.transform()/.pipe()` and `z.preprocess()` in a ZodPipe,
+// but with the sides swapped: preprocess puts the transform fn on `def.in`
+// and the real schema on `def.out`. Returns the non-transform side, or
+// undefined if the schema is not a pipe-like node.
+const getPipeTarget = (schema: ZodType<any>): ZodType<any> | undefined => {
+  const typeName = getTypeName(schema);
+  if (typeName !== "transform" && typeName !== "effect" && typeName !== "pipe") {
+    return undefined;
+  }
+  const def = getDef(schema);
+  if (!def) return undefined;
+  return getTypeName(def.in) === "transform" ? def.out : def.in;
+};
+
 const unwrapTransforms = (schema: ZodType<any>): ZodType<any> => {
   const typeName = getTypeName(schema);
 
-  if (typeName === "transform" || typeName === "effect" || typeName === "pipe") {
-    const def = getDef(schema);
-    if (def?.in) {
-      return unwrapTransforms(def.in);
-    }
+  const pipeTarget = getPipeTarget(schema);
+  if (pipeTarget) {
+    return unwrapTransforms(pipeTarget);
   }
 
   if (typeName === "object") {
@@ -337,11 +349,9 @@ const zodToOpenApi = (schema: ZodType<any>): Record<string, any> => {
     return { type: "null" };
   }
 
-  if (typeName === "transform" || typeName === "effect" || typeName === "pipe") {
-    const def = getDef(schema);
-    if (def?.in) {
-      return zodToOpenApi(def.in);
-    }
+  const pipeTarget = getPipeTarget(schema);
+  if (pipeTarget) {
+    return zodToOpenApi(pipeTarget);
   }
 
   if (typeName === "union") {
@@ -523,7 +533,8 @@ const zodObjectToParameters = <T>(
   return Object.keys(shape).map((paramName): Param<unknown> => {
     const paramSchema = shape[paramName] as z.Schema<any>;
     const extraDoc = extraDocumentation[paramName as keyof T];
-    const initialTypeName = getTypeName(paramSchema);
+    const unwrapped = unwrapTransforms(paramSchema);
+    const initialTypeName = getTypeName(unwrapped);
     const required = initialTypeName !== "optional";
 
     return {
