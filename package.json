@@ -105,9 +105,5 @@
       "import": "./dist/esm/openapi/index.mjs",
       "types": "./dist/openapi/index.d.ts"
     }
-  },
-  "dependencies": {
-    "@types/jest": "^30.0.0",
-    "jest": "^30.0.5"
   }
 }
