@@ -1,0 +1,1 @@
+{"version":3,"file":"standardSchemaUtils.mjs","sourceRoot":"","sources":["../src/standardSchemaUtils.ts"],"names":[],"mappings":"AAAA,MAAM,CAAC,IAAM,gBAAgB,GAAG,UAC9B,MAAS,EACT,KAAqC;IAErC,IAAM,MAAM,GAAG,MAAM,CAAC,WAAW,CAAC,CAAC,QAAQ,CAAC,KAAK,CAAC,CAAC;IACnD,IAAI,MAAM,YAAY,OAAO;QAC3B,MAAM,IAAI,SAAS,CAAC,uCAAuC,CAAC,CAAC;IAE/D,OAAO,MAAoC,CAAC;AAC9C,CAAC,CAAC"}
